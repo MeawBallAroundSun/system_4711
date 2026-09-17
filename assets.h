@@ -15,7 +15,12 @@
 extern MultilanguageText WELCOME;
 extern MultilanguageText CHOOSE_LANGUAGE;
 
-
 extern MultilanguageText LANGUAGES[LANGUAGE_NUMBER];
+
+extern MultilanguageText CREATE_ADMINISTRATOR_ACCOUNT;
+extern MultilanguageText CREATE_CRASHER_ACCOUNT;
+
+extern MultilanguageText INPUT_NAME;
+extern MultilanguageText INPUT_PASSWORD;
 
 #endif //SYSTEM_4711_ASSETS_H

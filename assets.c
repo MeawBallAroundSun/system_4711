@@ -25,3 +25,23 @@ MultilanguageText LANGUAGES[LANGUAGE_NUMBER] = {
         "中文"
     }
 };
+
+MultilanguageText CREATE_ADMINISTRATOR_ACCOUNT = {
+    "Create an administrator account:",
+    "创建管理员账户："
+};
+
+MultilanguageText CREATE_CRASHER_ACCOUNT = {
+    "Create a crasher account:",
+    "创建营业员账户："
+};
+
+MultilanguageText INPUT_NAME = {
+    "Name:",
+    "名称："
+};
+
+MultilanguageText INPUT_PASSWORD = {
+    "Password:",
+    "密码："
+};
