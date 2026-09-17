@@ -56,7 +56,7 @@ typedef struct Component {
     int parameters[8];
     int texts_number;
     MultilanguageText *texts;
-    void *image;
+    char *image;
     void (*call_back) (int state);
 } Component;
 

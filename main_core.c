@@ -48,6 +48,7 @@ void enter_welcome_page(const int state) {
         case 1:
         case 2:
             // 老用户
+            break;
     }
 }
 
