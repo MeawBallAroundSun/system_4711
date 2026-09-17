@@ -7,7 +7,15 @@
 
 #include "language.h"
 
+
+#define LANGUAGE_NUMBER 2
+
+
+
 extern MultilanguageText WELCOME;
 extern MultilanguageText CHOOSE_LANGUAGE;
+
+
+extern MultilanguageText LANGUAGES[LANGUAGE_NUMBER];
 
 #endif //SYSTEM_4711_ASSETS_H

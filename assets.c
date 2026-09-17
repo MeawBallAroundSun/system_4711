@@ -11,6 +11,17 @@ MultilanguageText WELCOME = {
 };
 
 MultilanguageText CHOOSE_LANGUAGE = {
-    "This is your first time using the system,please choose the language you want to use.",
+    "Since this is your first time using the system, please choose the language you want to use.",
     "这是您第一次使用此系统，请选择您想要使用的语言。"
+};
+
+MultilanguageText LANGUAGES[LANGUAGE_NUMBER] = {
+    {
+        "English",
+        "English"
+    },
+    {
+        "中文",
+        "中文"
+    }
 };

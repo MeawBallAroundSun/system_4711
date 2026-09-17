@@ -21,11 +21,13 @@
 #define CORE_UI_FOCUSABLE           0x00000001
 #define CORE_UI_BORD                0x00000002
 
-#define UP_ARROW_4711               72
-#define DOWN_ARROW_4711             80
-#define LEFT_ARROW_4711             75
-#define RIGHT_ARROW_4711            77
-#define ENTER_4711                  13
+#define STRING_INPUT_4711           10
+#define UP_ARROW_4711               11
+#define DOWN_ARROW_4711             12
+#define LEFT_ARROW_4711             13
+#define RIGHT_ARROW_4711            14
+#define ENTER_4711                  15
+#define SPACE_4711                  16
 
 #define CLEAN_UP_CONSOLE            "\033[2J"
 #define DEFAULT_COLOR_ANSI          "\033[0m"
@@ -82,6 +84,12 @@ void remove_component(const Component *c);
 void remove_component_with_index(int index);
 
 void remove_all_components();
+
+void set_location(Component *c, int x, int y);
+
+void set_size(Component *c, int width, int height);
+
+void set_box_choose(Component *c, int index);
 
 Component create_label(MultilanguageText *text, short x, short y, short width, short height, int color);
 

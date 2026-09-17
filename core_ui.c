@@ -9,6 +9,7 @@
 
 #include "core_ui.h"
 
+#include <time.h>
 
 
 #define INITIAL_CAPACITY 16
@@ -18,7 +19,10 @@ static int vector_capacity = 0;
 static const Component **components;
 static Component *focused_component;
 
+static char ansi_color_string[32];
+
 static char time_string[32];
+static time_t current_time;
 
 static HANDLE handle_0;
 static HANDLE handle_1;
@@ -98,7 +102,6 @@ void add_component(const Component *c) {
 void set_focused_component(Component *c) {
     if (c != NULL) {
         focused_component = c;
-        c -> parameters[0] = c -> parameters[1];
     }
 }
 
@@ -132,6 +135,22 @@ void remove_all_components() {
     vector_size = 0;
 }
 
+void set_location(Component *c, const int x, const int y) {
+    const COORD new_coord = {x, y};
+    c -> coord = new_coord;
+}
+
+void set_size(Component *c, const int width, const int height) {
+    c -> width = width;
+    c -> height = height;
+}
+
+void set_box_choose(Component *c, const int index) {
+    if (c -> type == CORE_UI_CHOOSE_BOX) {
+        c -> parameters[5] = index;
+    }
+}
+
 // 创建标签
 Component create_label(MultilanguageText *text, const short x, const short y, const short width, const short height, const int color) {
     short w;
@@ -156,7 +175,7 @@ Component create_choose_box(MultilanguageText *text, const int number, const sho
     return c;
 }
 
-Component creat_clock(short x, short y, int color) {
+Component creat_clock(const short x, const short y, const int color) {
     const Component c = {CORE_UI_CLOCK, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0};
     return c;
 }
@@ -165,6 +184,7 @@ void clean_console() {
     WriteConsole(current_handle, CLEAN_UP_CONSOLE, strlen(CLEAN_UP_CONSOLE), NULL, NULL);
 }
 
+// 刷新函数，每帧调用一次
 void refresh_console() {
     clean_console();
     refresh_time();
@@ -186,26 +206,30 @@ void refresh_console() {
         switch (focused_component -> type) {
             case CORE_UI_CHOOSE_BOX: {
                 // 多选框
-                const int key = _getch();
-                switch (key) {
-                    case UP_ARROW_4711:
-                    case LEFT_ARROW_4711:
-                        focused_component -> parameters[5] = (focused_component -> parameters[5] + focused_component -> texts_number - 1) % focused_component -> texts_number;
-                        break;
-                    case DOWN_ARROW_4711:
-                    case RIGHT_ARROW_4711:
-                        focused_component -> parameters[5] = (focused_component -> parameters[5] + 1) % focused_component -> texts_number;
-                        break;
-                    default:
-                        break;
+                if (_kbhit()) {
+                    const int key = _getch();
+                    switch (key) {
+                        case UP_ARROW_4711:
+                        case LEFT_ARROW_4711:
+                            focused_component -> parameters[5] = (focused_component -> parameters[5] + focused_component -> texts_number - 1) % focused_component -> texts_number;
+                            break;
+                        case DOWN_ARROW_4711:
+                        case RIGHT_ARROW_4711:
+                            focused_component -> parameters[5] = (focused_component -> parameters[5] + 1) % focused_component -> texts_number;
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
         }
     }
 }
 
+// 更新时间字符串
 void refresh_time() {
-    
+    current_time = time(NULL);
+    strftime(time_string, sizeof(time_string), "%Y / %m / %d    %H : %M : %S", localtime(&current_time));
 }
 
 void draw_component(const Component *c) {
@@ -537,6 +561,7 @@ short get_area(const unsigned int unicode) {
 
 // 设置输出颜色
 void set_color(const unsigned int color) {
+    // 这边后来发现可以用stdio.h里的方法简化，不过性能上可能这个还要好一点
     const unsigned int r = color >> 16 & 0xFF;
     const unsigned int g = color >> 8 & 0xFF;
     const unsigned int b = color & 0xFF;
@@ -565,7 +590,7 @@ void set_color(const unsigned int color) {
         bl = 1;
     }
     const int length = rl + gl + bl + 11;
-    char *s = malloc(length);
+    char *s = ansi_color_string;
     int i = 0;
     s[i ++] = '\033';
     s[i ++] = '[';
@@ -609,7 +634,6 @@ void set_color(const unsigned int color) {
     s[i ++] = 'm';
     s[i] = '\0';
     WriteConsole(current_handle, s, length, NULL, NULL);
-    free(s);
 }
 
 void set_to_default_color() {
