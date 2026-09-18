@@ -123,4 +123,6 @@ void set_color(unsigned int color);
 
 void set_to_default_color();
 
+
+
 #endif //SYSTEM_4711_CORE_UI_H

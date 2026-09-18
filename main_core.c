@@ -21,7 +21,7 @@ void init_components() {
     clock = creat_clock(0, 0, FOREGROUND_COLOR);
     welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
     choose_language_label = create_label(&CHOOSE_LANGUAGE, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
-    languages_box = create_choose_box(LANGUAGES, LANGUAGE_NUMBER, 0, 0, 1, LANGUAGE_NUMBER, 16, 1, SELECTED_COLOR);
+    languages_box = create_choose_box(LANGUAGES, LANGUAGE_NUMBER, 0, 0, LANGUAGE_NUMBER / 2, 2, 16, 1, SELECTED_COLOR);
 }
 
 // 进入欢迎界面
@@ -58,8 +58,8 @@ int main(void) {
     init_components();
 
     const int language_profile = load_language_profile();
-    enter_welcome_page(language_profile);
-    // set_language(zh_CN_4711);
+    enter_welcome_page(0);
+    // set_language(en_US_4711);
 
 
     while (1) {

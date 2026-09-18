@@ -6,13 +6,15 @@
 #include <stdlib.h>
 #include <windows.h>
 #include <conio.h>
+#include <time.h>
+#include <process.h>
 
 #include "core_ui.h"
 
-#include <time.h>
 
+#define INITIAL_CAPACITY                16
 
-#define INITIAL_CAPACITY 16
+#define MAX_INPUT_STRING_LENGTH         256
 
 static int vector_size = 0;
 static int vector_capacity = 0;
@@ -40,7 +42,7 @@ void init_console() {
     // 开启虚拟终端处理，用来实现清屏、文字颜色等效果
     DWORD handel_mode = 0;
     if (GetConsoleMode(handle_0, &handel_mode)) {
-        SetConsoleMode(handle_0, handel_mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT);
+        SetConsoleMode(handle_0, handel_mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT & ~ENABLE_LINE_INPUT);
     }
 
     // 设置双缓冲防止闪烁
@@ -54,9 +56,8 @@ void init_console() {
 
     // 另一个缓冲也要设置虚拟终端处理
     if (GetConsoleMode(handle_1, &handel_mode)) {
-        SetConsoleMode(handle_1, handel_mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT);
+        SetConsoleMode(handle_1, handel_mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT & ~ENABLE_LINE_INPUT);
     }
-
     SetConsoleActiveScreenBuffer(handle_1);
 
     current_handle = handle_1;
@@ -141,7 +142,7 @@ void set_location(Component *c, const int x, const int y) {
 }
 
 void set_size(Component *c, const int width, const int height) {
-    c -> width = width;
+    c -> width = width < CORE_UI_MINIMAL_TEXT_WIDTH ? CORE_UI_MINIMAL_TEXT_WIDTH : width;
     c -> height = height;
 }
 
@@ -292,7 +293,7 @@ int draw_text(const char *text, const short x, const short y, const short width,
     const char *s = text;
     int output_height = 0;
     set_color(color);
-    for (short i = y; i < y + height; i++, coord.Y ++, output_height ++) {
+    for (short i = y; i < y + height; i ++, coord.Y ++, output_height ++) {
         if (!s[0]) {
             break;
         }
@@ -303,17 +304,24 @@ int draw_text(const char *text, const short x, const short y, const short width,
             // 换行
             output_height ++;
             s ++;
-       } else if (
+        } else if (
             s[0] == '\t'
-       ) {
+        ) {
             // 制表，功能暂不实现，仅跳过
             s ++;
-       } else {
+            i --, coord.Y --, output_height --;
+        } else if (
+            s[0] == ' '
+        ) {
+            // 行头空格，跳过
+            s ++;
+            i --, coord.Y --, output_height --;
+        } else {
            const int line_length = get_line_length(s, width);
            SetConsoleCursorPosition(current_handle, coord);
            WriteConsole(current_handle, s, line_length, NULL, NULL);
            s += line_length;
-       }
+        }
     }
     return output_height;
 }
@@ -639,7 +647,6 @@ void set_color(const unsigned int color) {
 void set_to_default_color() {
     WriteConsole(current_handle, DEFAULT_COLOR_ANSI, strlen(DEFAULT_COLOR_ANSI), NULL, NULL);
 }
-
 
 
 
