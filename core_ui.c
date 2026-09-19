@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include <conio.h>
 #include <time.h>
 #include <process.h>
 
@@ -26,12 +25,86 @@ static char ansi_color_string[32];
 static char time_string[32];
 static time_t current_time;
 
+static char debug_text[256];
+
 static HANDLE handle_0;
 static HANDLE handle_1;
 static HANDLE current_handle;
 static COORD origin_coord = {0, 0};
 static COORD cursor_coord = {0, 0};
 
+static volatile int window_width;
+static volatile int window_height;
+
+static volatile char key_information[256];
+static volatile int input_mode = CONTROL_INPUT_MODE;
+
+static HANDLE input_handle;
+static HANDLE thread_handle;
+static volatile char thread_should_exit;
+
+// 输入虚拟键码，查询是否按下(读取后会将按键状态设为未按下，防止单次输入多次读取)
+char is_key_pressed(const int key) {
+    if (key >= 0 && key < 256) {
+        const char b = key_information[key];
+        key_information[key] = 0;
+        return b;
+    }
+    return 0;
+}
+
+// 设置输入模式，一个用于选择，一个用于打字
+void set_input_mode(const int mode) {
+    if (mode >=0 && mode < 2) {
+        input_mode = mode;
+    } else {
+        input_mode = CONTROL_INPUT_MODE;
+    }
+}
+
+// 输入线程函数
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
+static unsigned int input_thread_function(void *args) {
+    (void) args;
+
+    INPUT_RECORD record;
+    DWORD read_count;
+
+    int cao_cheng = 0;
+
+    while (!thread_should_exit) {
+        switch (input_mode) {
+            case CONTROL_INPUT_MODE:
+                if (PeekConsoleInput(input_handle, &record, 1, &read_count)) {
+                    ReadConsoleInput(input_handle, &record, 1, &read_count);
+                    cao_cheng ++;
+                    char *s = debug_text + sprintf(debug_text, "%d", cao_cheng);
+                    switch (record.EventType) {
+                        case KEY_EVENT:
+                            key_information[record.Event.KeyEvent.wVirtualKeyCode] = record.Event.KeyEvent.bKeyDown;
+                            s += sprintf(s, "key:");
+                            s += sprintf(s, "   %d", record.Event.KeyEvent.wVirtualKeyCode);
+                            sprintf(s, "   %d", record.Event.KeyEvent.uChar.UnicodeChar);
+                            break;
+                        case MOUSE_EVENT:
+                            break;
+                        case WINDOW_BUFFER_SIZE_EVENT:
+                            break;
+                        default:
+                            sprintf(s, "default");
+                            break;
+                    }
+
+                }
+                break;
+            case STRING_INPUT_MODE:
+                break;
+        }
+    }
+    return 0;
+}
+
+// 其实应该加返回值来检测初始化是否有问题的，但是暂时还没改
 void init_console() {
     // UTF_8输出，用来避免乱码
     SetConsoleOutputCP(CP_UTF8);
@@ -42,7 +115,7 @@ void init_console() {
     // 开启虚拟终端处理，用来实现清屏、文字颜色等效果
     DWORD handel_mode = 0;
     if (GetConsoleMode(handle_0, &handel_mode)) {
-        SetConsoleMode(handle_0, handel_mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT & ~ENABLE_LINE_INPUT);
+        SetConsoleMode(handle_0, handel_mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     }
 
     // 设置双缓冲防止闪烁
@@ -56,14 +129,31 @@ void init_console() {
 
     // 另一个缓冲也要设置虚拟终端处理
     if (GetConsoleMode(handle_1, &handel_mode)) {
-        SetConsoleMode(handle_1, handel_mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT & ~ENABLE_LINE_INPUT);
+        SetConsoleMode(handle_1, handel_mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     }
     SetConsoleActiveScreenBuffer(handle_1);
 
     current_handle = handle_1;
+
+    // 创建新线程处理输入
+    input_handle = GetStdHandle(STD_INPUT_HANDLE);
+    if (GetConsoleMode(input_handle, &handel_mode)) {
+        SetConsoleMode(input_handle, handel_mode | ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
+    }
+
+    thread_should_exit = 0;
+    thread_handle = (HANDLE) _beginthreadex(NULL, 0, input_thread_function, NULL, 0, NULL);
+    CloseHandle(thread_handle);
 }
 
-// 此函数不稳定，不建议使用
+void exit_console() {
+    // 关闭输入线程
+    thread_should_exit = 1;
+
+    // 其他的交给C运行时自动释放
+}
+
+// 此函数在当前Windows版本下不稳定，不建议使用
 void set_console_size(const short width, const short height) {
     const COORD size = {width, height};
     SetConsoleScreenBufferSize(handle_0, size);
@@ -176,8 +266,13 @@ Component create_choose_box(MultilanguageText *text, const int number, const sho
     return c;
 }
 
-Component creat_clock(const short x, const short y, const int color) {
+Component create_clock(const short x, const short y, const int color) {
     const Component c = {CORE_UI_CLOCK, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0};
+    return c;
+}
+
+Component create_debug_panel(const short x, const short y, const int color) {
+    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 64, 4, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0};
     return c;
 }
 
@@ -187,43 +282,39 @@ void clean_console() {
 
 // 刷新函数，每帧调用一次
 void refresh_console() {
+    // 清屏
     clean_console();
-    refresh_time();
-    SetConsoleCursorPosition(current_handle, origin_coord);
 
+    // 更新时间
+    refresh_time();
+
+    // 逐个绘制
     for (int i = 0; i < vector_size; i++) {
         draw_component(components[i]);
     }
 
+    // 挪回光标
+    SetConsoleCursorPosition(current_handle, origin_coord);
+
+    // 处理特殊组件的逻辑
+    if (focused_component != NULL) {
+        switch (focused_component -> type) {
+            case CORE_UI_CHOOSE_BOX: {
+                // 多选框
+                if (is_key_pressed(VK_DOWN)) {
+                    focused_component -> parameters[5] = (focused_component -> parameters[5] + 1) % focused_component -> texts_number;
+                }
+            }
+        }
+    }
+
+    // 交换缓冲区
     if (current_handle == handle_0) {
         SetConsoleActiveScreenBuffer(handle_0);
         current_handle = handle_1;
     } else {
         SetConsoleActiveScreenBuffer(handle_1);
         current_handle = handle_0;
-    }
-
-    if (focused_component != NULL) {
-        switch (focused_component -> type) {
-            case CORE_UI_CHOOSE_BOX: {
-                // 多选框
-                if (_kbhit()) {
-                    const int key = _getch();
-                    switch (key) {
-                        case UP_ARROW_4711:
-                        case LEFT_ARROW_4711:
-                            focused_component -> parameters[5] = (focused_component -> parameters[5] + focused_component -> texts_number - 1) % focused_component -> texts_number;
-                            break;
-                        case DOWN_ARROW_4711:
-                        case RIGHT_ARROW_4711:
-                            focused_component -> parameters[5] = (focused_component -> parameters[5] + 1) % focused_component -> texts_number;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -238,10 +329,11 @@ void draw_component(const Component *c) {
         COORD coord = c -> coord;
         short remaining_height = c -> height;
         switch (c -> type) {
-            case CORE_UI_LABEL:
+            case CORE_UI_LABEL: {
                 draw_multilanguage_text(c -> texts[0], coord.X, coord.Y, c -> width, c -> height, c -> color);
                 break;
-            case CORE_UI_CHOOSE_BOX:
+            }
+            case CORE_UI_CHOOSE_BOX: {
                 for (int i = 0, column = 0, row = 0; i < c -> texts_number; i++) {
                     if (i == c -> parameters[5]) {
                         draw_multilanguage_text(c -> texts[i], (short) (coord.X + column * c -> parameters[2]), (short) (coord.Y + row * c -> parameters[3]), (short) c -> parameters[2], (short) c -> parameters[3], c -> color);
@@ -255,8 +347,14 @@ void draw_component(const Component *c) {
                     }
                 }
                 break;
+            }
             case CORE_UI_CLOCK: {
                 draw_text(time_string, coord.X, coord.Y, c -> width, c -> height, c -> color);
+                break;
+            }
+            case CORE_UI_DEBUG_PANEL: {
+                draw_text(debug_text, coord.X, coord.Y, c -> width, c -> height, c -> color);
+                break;
             }
             default:
             case CORE_UI_UNKNOWN: {

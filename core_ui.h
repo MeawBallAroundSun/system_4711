@@ -13,6 +13,7 @@
 #define CORE_UI_LABEL               1
 #define CORE_UI_CHOOSE_BOX          2
 #define CORE_UI_CLOCK               3
+#define CORE_UI_DEBUG_PANEL         4
 
 #define CORE_UI_CONSOLE_WIDTH       256
 #define CORE_UI_CONSOLE_HEIGHT      144
@@ -21,13 +22,8 @@
 #define CORE_UI_FOCUSABLE           0x00000001
 #define CORE_UI_BORD                0x00000002
 
-#define STRING_INPUT_4711           10
-#define UP_ARROW_4711               11
-#define DOWN_ARROW_4711             12
-#define LEFT_ARROW_4711             13
-#define RIGHT_ARROW_4711            14
-#define ENTER_4711                  15
-#define SPACE_4711                  16
+#define CONTROL_INPUT_MODE          1000
+#define STRING_INPUT_MODE           1001
 
 #define CLEAN_UP_CONSOLE            "\033[2J"
 #define DEFAULT_COLOR_ANSI          "\033[0m"
@@ -67,7 +63,13 @@ typedef struct UnicodeCharacter {
     char length;                    // 指utf_8编码下的字节数
 } UnicodeCharacter;
 
+char is_key_pressed(int key);
+
+void set_input_mode(int mode);
+
 void init_console();
+
+void exit_console();
 
 void set_console_size(short width, short height);
 
@@ -95,7 +97,9 @@ Component create_label(MultilanguageText *text, short x, short y, short width, s
 
 Component create_choose_box(MultilanguageText *text, int number, short x, short y, short column, short row, short grid_width, short grid_height, int color);
 
-Component creat_clock(short x, short y, int color);
+Component create_clock(short x, short y, int color);
+
+Component create_debug_panel(short x, short y, int color);
 
 void clean_console();
 
