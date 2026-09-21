@@ -174,8 +174,7 @@ int write_buffer(Buffer *buffer, const char *string, const int length) {
                 if (string[i] == '\0') {
                     break;
                 }
-
-
+                write_char_to_ring_buffer(&buffer -> ring, string[i]);
             }
             LeaveCriticalSection(&buffer -> cs);
         }
