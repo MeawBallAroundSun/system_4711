@@ -8,6 +8,7 @@
 #include <windows.h>
 
 #include "language.h"
+#include "core_char.h"
 
 #define CORE_UI_UNKNOWN             0
 #define CORE_UI_LABEL               1
@@ -27,18 +28,6 @@
 #define FOREGROUND_COLOR            0xFFFFFF
 #define SELECTED_COLOR              0xB040A0
 
-#define UNKNOWN_CHAR_4711           0
-#define LATIN_CHAR_4711             1
-#define GREEK_COPTIC_CHAR_4711      2
-#define CYRIL_CHAR_4711             3
-#define ARMENIAN_CHAR_4711          4
-#define HEBREW_CHAR_4711            5
-#define ARABIC_CHAR_4711            6
-#define CJK_CHAR_4711               7
-#define PUNCTUATION_CHAR_4711       100
-#define NUMBER_CHAR_4711            101
-#define EMOJI_CHAR_4711             102
-
 typedef struct Component {
     int type;
     int mode;
@@ -52,15 +41,6 @@ typedef struct Component {
     char *image;
     void (*call_back) (int state);
 } Component;
-
-typedef struct UnicodeCharacter {
-    unsigned int unicode;
-    short area;                     // 指语言种类，比如中文、emoji
-    char is_full_width;             // 全半角
-    char length;                    // 指utf_8编码下的字节数
-} UnicodeCharacter;
-
-
 
 void init_console();
 
@@ -117,12 +97,6 @@ int draw_text(const char *text, short x, short y, short width, short height, int
 int get_line_length(const char *text, short width);
 
 COORD get_next_word_length_and_width(const char *text);
-
-UnicodeCharacter get_next_utf_8(const char *text);
-
-char is_full_width(unsigned int unicode);
-
-short get_area(unsigned int unicode);
 
 void set_color(unsigned int color);
 

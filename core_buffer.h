@@ -20,6 +20,12 @@ void release_buffer(Buffer *buffer);
 
 void clear_buffer(Buffer *buffer);
 
+int get_size(Buffer *buffer);
+
+int get_remaining_size(Buffer *buffer);
+
+int get_used_size(Buffer *buffer);
+
 
 
 
