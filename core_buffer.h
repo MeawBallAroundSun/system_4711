@@ -26,6 +26,8 @@ int get_remaining_size(Buffer *buffer);
 
 int get_used_size(Buffer *buffer);
 
+int write_buffer(Buffer *buffer, const char *string, int length);
+
 
 
 
