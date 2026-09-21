@@ -13,97 +13,75 @@
 
 #define INITIAL_CAPACITY                16
 
-#define MAX_INPUT_STRING_LENGTH         256
+
+#define MAX_DEBUG_STRING_LENGTH         4096
+#define MAX_INPUT_STRING_LENGTH         4096
+
 
 static int vector_size = 0;
 static int vector_capacity = 0;
 static const Component **components;
 static Component *focused_component;
 
+// ANSI颜色代码
 static char ansi_color_string[32];
 
+// 时间相关
 static char time_string[32];
 static time_t current_time;
 
-static char debug_text[256];
+// 调试文本缓冲区
+static char debug_text[MAX_DEBUG_STRING_LENGTH];
+static int debug_text_length = 0;
 
+// 输出窗口句柄
 static HANDLE handle_0;
 static HANDLE handle_1;
 static HANDLE current_handle;
+
 static COORD origin_coord = {0, 0};
 static COORD cursor_coord = {0, 0};
 
 static volatile int window_width;
 static volatile int window_height;
 
+// 键盘输入
 static volatile char key_information[256];
-static volatile int input_mode = CONTROL_INPUT_MODE;
+
+// 环形管道缓冲区，用于给主线程
+static char input_string[MAX_INPUT_STRING_LENGTH];
 
 static HANDLE input_handle;
 static HANDLE thread_handle;
 static volatile char thread_should_exit;
 
-// 输入虚拟键码，查询是否按下(读取后会将按键状态设为未按下，防止单次输入多次读取)
-char is_key_pressed(const int key) {
-    if (key >= 0 && key < 256) {
-        const char b = key_information[key];
-        key_information[key] = 0;
-        return b;
-    }
-    return 0;
-}
 
-// 设置输入模式，一个用于选择，一个用于打字
-void set_input_mode(const int mode) {
-    if (mode >=0 && mode < 2) {
-        input_mode = mode;
-    } else {
-        input_mode = CONTROL_INPUT_MODE;
-    }
-}
 
 // 输入线程函数
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 static unsigned int input_thread_function(void *args) {
     (void) args;
 
-    INPUT_RECORD record;
-    DWORD read_count;
-
-    int cao_cheng = 0;
+    DWORD read_count = 0;
+    char buffer[MAX_INPUT_STRING_LENGTH];
 
     while (!thread_should_exit) {
-        switch (input_mode) {
-            case CONTROL_INPUT_MODE:
-                if (PeekConsoleInput(input_handle, &record, 1, &read_count)) {
-                    ReadConsoleInput(input_handle, &record, 1, &read_count);
-                    cao_cheng ++;
-                    char *s = debug_text + sprintf(debug_text, "%d", cao_cheng);
-                    switch (record.EventType) {
-                        case KEY_EVENT:
-                            key_information[record.Event.KeyEvent.wVirtualKeyCode] = record.Event.KeyEvent.bKeyDown;
-                            s += sprintf(s, "key:");
-                            s += sprintf(s, "   %d", record.Event.KeyEvent.wVirtualKeyCode);
-                            sprintf(s, "   %d", record.Event.KeyEvent.uChar.UnicodeChar);
-                            break;
-                        case MOUSE_EVENT:
-                            break;
-                        case WINDOW_BUFFER_SIZE_EVENT:
-                            break;
-                        default:
-                            sprintf(s, "default");
-                            break;
-                    }
+        ReadConsoleA(input_handle, buffer, MAX_INPUT_STRING_LENGTH, &read_count, NULL);
+        if (read_count != 0) {
+            int i = 0;
+            while (buffer[i] != '\0') {
+                if (buffer[i] == '\033') {
+                    // 转义序列
+                } else {
 
                 }
-                break;
-            case STRING_INPUT_MODE:
-                break;
+            }
         }
     }
     return 0;
 }
 
+// 初始化控制台并启动输入线程
 // 其实应该加返回值来检测初始化是否有问题的，但是暂时还没改
 void init_console() {
     // UTF_8输出，用来避免乱码
@@ -138,7 +116,7 @@ void init_console() {
     // 创建新线程处理输入
     input_handle = GetStdHandle(STD_INPUT_HANDLE);
     if (GetConsoleMode(input_handle, &handel_mode)) {
-        SetConsoleMode(input_handle, handel_mode | ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
+        SetConsoleMode(input_handle, handel_mode | ENABLE_PROCESSED_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT & ~ENABLE_LINE_INPUT & ~ENABLE_ECHO_INPUT);
     }
 
     thread_should_exit = 0;
@@ -146,11 +124,73 @@ void init_console() {
     CloseHandle(thread_handle);
 }
 
+// 退出控制台
 void exit_console() {
     // 关闭输入线程
     thread_should_exit = 1;
 
     // 其他的交给C运行时自动释放
+}
+
+void clean_debug() {
+    debug_text_length = 0;
+    debug_text[0] = '\0';
+}
+
+// 打印调试字符，所有的debug_panel都会显示其中的内容
+// 当数组越界时，会整体前移消耗性能
+// 另外，越界之后不保证utf_8字符串不完整部分能正常显示，可能在开头部分出现乱码（比较简陋凑合用）
+void print_debug(const char *text, const int length, const char ln) {
+    if (debug_text_length > 0) {
+        debug_text_length --;
+    }
+
+    for (int i = 0; i < length; i++) {
+        if (text[i] != '\0') {
+            if (debug_text_length < MAX_DEBUG_STRING_LENGTH) {
+                debug_text[debug_text_length ++] = text[i];
+            } else {
+                for (int j = 0; j < MAX_DEBUG_STRING_LENGTH - 1; j++) {
+                    debug_text[j] = debug_text[j + 1];
+                }
+                debug_text[MAX_DEBUG_STRING_LENGTH - 1] = text[i];
+            }
+        } else {
+            break;
+        }
+    }
+
+    if (ln) {
+        // 补上"\n"
+        if (debug_text_length < MAX_DEBUG_STRING_LENGTH) {
+            debug_text[debug_text_length ++] = '\n';
+        } else {
+            for (int j = 0; j < MAX_DEBUG_STRING_LENGTH - 1; j++) {
+                debug_text[j] = debug_text[j + 1];
+            }
+            debug_text[MAX_DEBUG_STRING_LENGTH - 1] = '\n';
+        }
+    }
+
+    // 补上'\0'
+    if (debug_text_length < MAX_DEBUG_STRING_LENGTH) {
+        debug_text[debug_text_length ++] = '\0';
+    } else {
+        for (int j = 0; j < MAX_DEBUG_STRING_LENGTH - 1; j++) {
+            debug_text[j] = debug_text[j + 1];
+        }
+        debug_text[MAX_DEBUG_STRING_LENGTH - 1] = '\0';
+    }
+}
+
+// 输入虚拟键码，查询是否按下(读取后会将按键状态设为未按下，防止单次输入多次读取)
+char is_key_pressed(const int key) {
+    if (key >= 0 && key < 256) {
+        const char b = key_information[key];
+        key_information[key] = 0;
+        return b;
+    }
+    return 0;
 }
 
 // 此函数在当前Windows版本下不稳定，不建议使用
@@ -272,7 +312,7 @@ Component create_clock(const short x, const short y, const int color) {
 }
 
 Component create_debug_panel(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 64, 4, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0};
+    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0};
     return c;
 }
 
@@ -287,6 +327,8 @@ void refresh_console() {
 
     // 更新时间
     refresh_time();
+
+    // 获取窗口大小
 
     // 逐个绘制
     for (int i = 0; i < vector_size; i++) {
@@ -391,34 +433,39 @@ int draw_text(const char *text, const short x, const short y, const short width,
     const char *s = text;
     int output_height = 0;
     set_color(color);
-    for (short i = y; i < y + height; i ++, coord.Y ++, output_height ++) {
+    for (short i = y; i < y + height;) {
         if (!s[0]) {
             break;
         }
         if (
-            s[0] == '\n'          ||
+            s[0] == '\n'            ||
             s[0] == '\r'
         ) {
             // 换行
-            output_height ++;
             s ++;
+            coord.X = x;
+            i ++, coord.Y ++, output_height ++;
         } else if (
             s[0] == '\t'
         ) {
             // 制表，功能暂不实现，仅跳过
             s ++;
-            i --, coord.Y --, output_height --;
         } else if (
             s[0] == ' '
         ) {
             // 行头空格，跳过
             s ++;
-            i --, coord.Y --, output_height --;
         } else {
-           const int line_length = get_line_length(s, width);
-           SetConsoleCursorPosition(current_handle, coord);
-           WriteConsole(current_handle, s, line_length, NULL, NULL);
-           s += line_length;
+            const int line_length = get_line_length(s, width);
+            SetConsoleCursorPosition(current_handle, coord);
+            WriteConsole(current_handle, s, line_length, NULL, NULL);
+            s += line_length;
+            if (
+                s[0] != '\n'        &&
+                s[0] != '\r'
+            ) {
+                i ++, coord.Y ++, output_height ++;
+            }
         }
     }
     return output_height;
@@ -430,6 +477,10 @@ int get_line_length(const char *text, const short width) {
     int remaining_width = width;
     int length = 0;
     while (s[0]) {
+        if (s[0] == '\n' || s[0] == '\r') {
+            break;
+        }
+
         if (s[0] == '\033') {
             // ANSI序列
             s ++;

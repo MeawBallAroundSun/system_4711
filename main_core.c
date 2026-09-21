@@ -48,6 +48,7 @@ void enter_welcome_page(const int state) {
             set_focused_component(&languages_box);
 
             set_location(&debug_panel, 0, 12);
+            set_size(&debug_panel, 64, 16);
             add_component(&debug_panel);
             break;
         case 1:

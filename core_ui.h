@@ -22,9 +22,6 @@
 #define CORE_UI_FOCUSABLE           0x00000001
 #define CORE_UI_BORD                0x00000002
 
-#define CONTROL_INPUT_MODE          1000
-#define STRING_INPUT_MODE           1001
-
 #define CLEAN_UP_CONSOLE            "\033[2J"
 #define DEFAULT_COLOR_ANSI          "\033[0m"
 #define FOREGROUND_COLOR            0xFFFFFF
@@ -63,13 +60,17 @@ typedef struct UnicodeCharacter {
     char length;                    // 指utf_8编码下的字节数
 } UnicodeCharacter;
 
-char is_key_pressed(int key);
 
-void set_input_mode(int mode);
 
 void init_console();
 
 void exit_console();
+
+void clean_debug();
+
+void print_debug(const char *text, int length, char ln);
+
+char is_key_pressed(int key);
 
 void set_console_size(short width, short height);
 
