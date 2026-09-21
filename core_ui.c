@@ -132,7 +132,7 @@ void exit_console() {
     // 其他的交给C运行时自动释放
 }
 
-void clean_debug() {
+void clear_debug() {
     debug_text_length = 0;
     debug_text[0] = '\0';
 }
@@ -316,14 +316,14 @@ Component create_debug_panel(const short x, const short y, const int color) {
     return c;
 }
 
-void clean_console() {
+void clear_console() {
     WriteConsole(current_handle, CLEAN_UP_CONSOLE, strlen(CLEAN_UP_CONSOLE), NULL, NULL);
 }
 
 // 刷新函数，每帧调用一次
 void refresh_console() {
     // 清屏
-    clean_console();
+    clear_console();
 
     // 更新时间
     refresh_time();

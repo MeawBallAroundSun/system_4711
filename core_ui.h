@@ -66,7 +66,7 @@ void init_console();
 
 void exit_console();
 
-void clean_debug();
+void clear_debug();
 
 void print_debug(const char *text, int length, char ln);
 
@@ -102,7 +102,7 @@ Component create_clock(short x, short y, int color);
 
 Component create_debug_panel(short x, short y, int color);
 
-void clean_console();
+void clear_console();
 
 void refresh_console();
 

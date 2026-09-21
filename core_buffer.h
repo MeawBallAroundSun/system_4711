@@ -5,4 +5,23 @@
 #ifndef SYSTEM_4711_CORE_BUFFER_H
 #define SYSTEM_4711_CORE_BUFFER_H
 
+#define CORE_BUFFER_UNKNOWN          0
+#define CORE_BUFFER_RING            1
+
+#define MINIMAL_BUFFER_SIZE         16
+
+typedef struct Buffer Buffer;
+
+typedef struct RingBuffer RingBuffer;
+
+void create_buffer(Buffer *buffer, int type, int size);
+
+void release_buffer(Buffer *buffer);
+
+void clear_buffer(Buffer *buffer);
+
+
+
+
+
 #endif //SYSTEM_4711_CORE_BUFFER_H
