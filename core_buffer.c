@@ -168,7 +168,6 @@ int write_buffer(Buffer *buffer, const char *string, const int length) {
         case CORE_BUFFER_RING: {
             // 环形缓冲区
             EnterCriticalSection(&buffer -> cs);
-
             int write_count = 0;
             for (int i = buffer -> ring.read_index; i < length; i++, write_count++) {
                 if (string[i] == '\0') {
@@ -177,6 +176,7 @@ int write_buffer(Buffer *buffer, const char *string, const int length) {
                 write_char_to_ring_buffer(&buffer -> ring, string[i]);
             }
             LeaveCriticalSection(&buffer -> cs);
+            return write_count;
         }
 
         case CORE_BUFFER_UNKNOWN:
