@@ -11,4 +11,6 @@ add_executable(system_4711 main_core.c
         core_ui.c
         core_ui.h
         assets.c
-        assets.h)
+        assets.h
+        core_buffer.c
+        core_buffer.h)

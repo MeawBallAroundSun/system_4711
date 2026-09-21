@@ -1,0 +1,8 @@
+//
+// Created by HZQ on 2026/9/21.
+//
+
+#ifndef SYSTEM_4711_CORE_BUFFER_H
+#define SYSTEM_4711_CORE_BUFFER_H
+
+#endif //SYSTEM_4711_CORE_BUFFER_H
