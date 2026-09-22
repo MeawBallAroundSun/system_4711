@@ -10,9 +10,21 @@
 
 #define MINIMAL_BUFFER_SIZE         16
 
-typedef struct Buffer Buffer;
+typedef struct RingBuffer {
+    int size;
+    char *buffer;
+    volatile int read_index;
+    volatile int write_index;
+} RingBuffer;
 
-typedef struct RingBuffer RingBuffer;
+
+typedef struct Buffer {
+    int type;
+    union {
+        RingBuffer ring;
+    };
+    CRITICAL_SECTION cs;
+} Buffer;
 
 void create_buffer(Buffer *buffer, int type, int size);
 
@@ -27,6 +39,8 @@ int get_remaining_size(Buffer *buffer);
 int get_used_size(Buffer *buffer);
 
 int write_buffer(Buffer *buffer, const char *string, int length);
+
+int read_buffer(Buffer *buffer, char *string, int length, char consume);
 
 
 

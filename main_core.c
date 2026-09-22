@@ -67,9 +67,9 @@ int main(void) {
     enter_welcome_page(0);
     // set_language(en_US_4711);
 
-
     while (1) {
         refresh_console();
+
     }
 
 

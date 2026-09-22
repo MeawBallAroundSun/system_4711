@@ -9,13 +9,15 @@
 #include <process.h>
 
 #include "core_ui.h"
+#include "core_char.h"
+#include "core_buffer.h"
 
 
 #define INITIAL_CAPACITY                16
 
 
-#define MAX_DEBUG_STRING_LENGTH         4096
-#define MAX_INPUT_STRING_LENGTH         4096
+#define MAX_DEBUG_TEXT_LENGTH         4096
+#define MAX_INPUT_TEXT_LENGTH         4096
 
 
 static int vector_size = 0;
@@ -31,8 +33,16 @@ static char time_string[32];
 static time_t current_time;
 
 // 调试文本缓冲区
-static char debug_text[MAX_DEBUG_STRING_LENGTH];
-static int debug_text_length = 0;
+static Buffer debug_buffer;
+static char debug_text[MAX_DEBUG_TEXT_LENGTH];
+
+// 输入缓冲区
+static Buffer input_buffer;
+static char input_text[MAX_INPUT_TEXT_LENGTH];
+
+static HANDLE input_handle;
+static HANDLE thread_handle;
+static volatile char thread_should_exit;
 
 // 输出窗口句柄
 static HANDLE handle_0;
@@ -48,35 +58,24 @@ static volatile int window_height;
 // 键盘输入
 static volatile char key_information[256];
 
-// 环形管道缓冲区，用于给主线程
-static char input_string[MAX_INPUT_STRING_LENGTH];
 
-static HANDLE input_handle;
-static HANDLE thread_handle;
-static volatile char thread_should_exit;
 
 
 
 // 输入线程函数
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
-static unsigned int input_thread_function(void *args) {
+static unsigned __stdcall input_thread_function(void *args) {
     (void) args;
 
     DWORD read_count = 0;
-    char buffer[MAX_INPUT_STRING_LENGTH];
+    char buffer[MAX_INPUT_TEXT_LENGTH];
 
     while (!thread_should_exit) {
-        ReadConsoleA(input_handle, buffer, MAX_INPUT_STRING_LENGTH, &read_count, NULL);
-        if (read_count != 0) {
-            int i = 0;
-            while (buffer[i] != '\0') {
-                if (buffer[i] == '\033') {
-                    // 转义序列
-                } else {
-
-                }
-            }
-        }
+        // 这里似乎有极其微小的输入utf_8被意外截断的情况，但基本不影响程序稳定性
+        ReadConsoleA(input_handle, buffer, MAX_INPUT_TEXT_LENGTH, &read_count, NULL);
+        write_buffer(&input_buffer, buffer, read_count);
+        read_buffer(&input_buffer, buffer, read_count, 0);
+        print_debug(buffer, read_count, 1);
     }
     return 0;
 }
@@ -84,7 +83,8 @@ static unsigned int input_thread_function(void *args) {
 // 初始化控制台并启动输入线程
 // 其实应该加返回值来检测初始化是否有问题的，但是暂时还没改
 void init_console() {
-    // UTF_8输出，用来避免乱码
+    // UTF_8输入输出，用来避免乱码
+    SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 
     // 获取句柄
@@ -113,10 +113,13 @@ void init_console() {
 
     current_handle = handle_1;
 
+    // 初始化缓冲区
+    create_buffer(&debug_buffer, CORE_BUFFER_RING, MAX_DEBUG_TEXT_LENGTH);
+
     // 创建新线程处理输入
     input_handle = GetStdHandle(STD_INPUT_HANDLE);
     if (GetConsoleMode(input_handle, &handel_mode)) {
-        SetConsoleMode(input_handle, handel_mode | ENABLE_PROCESSED_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT & ~ENABLE_LINE_INPUT & ~ENABLE_ECHO_INPUT);
+        SetConsoleMode(input_handle, (handel_mode | ENABLE_PROCESSED_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT) & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
     }
 
     thread_should_exit = 0;
@@ -129,57 +132,26 @@ void exit_console() {
     // 关闭输入线程
     thread_should_exit = 1;
 
+    // 清理缓冲区
+    release_buffer(&debug_buffer);
+
     // 其他的交给C运行时自动释放
 }
 
+// 清空调试区
 void clear_debug() {
-    debug_text_length = 0;
-    debug_text[0] = '\0';
+    clear_buffer(&debug_buffer);
 }
 
 // 打印调试字符，所有的debug_panel都会显示其中的内容
-// 当数组越界时，会整体前移消耗性能
-// 另外，越界之后不保证utf_8字符串不完整部分能正常显示，可能在开头部分出现乱码（比较简陋凑合用）
+// 当输入过长时，环形缓冲区会自动覆盖旧内容
+// 另外，覆盖之后不保证utf_8字符串不完整部分能正常显示，可能在开头部分出现乱码（比较简陋凑合用）
 void print_debug(const char *text, const int length, const char ln) {
-    if (debug_text_length > 0) {
-        debug_text_length --;
-    }
-
-    for (int i = 0; i < length; i++) {
-        if (text[i] != '\0') {
-            if (debug_text_length < MAX_DEBUG_STRING_LENGTH) {
-                debug_text[debug_text_length ++] = text[i];
-            } else {
-                for (int j = 0; j < MAX_DEBUG_STRING_LENGTH - 1; j++) {
-                    debug_text[j] = debug_text[j + 1];
-                }
-                debug_text[MAX_DEBUG_STRING_LENGTH - 1] = text[i];
-            }
-        } else {
-            break;
-        }
-    }
+    write_buffer(&debug_buffer, text, length);
 
     if (ln) {
-        // 补上"\n"
-        if (debug_text_length < MAX_DEBUG_STRING_LENGTH) {
-            debug_text[debug_text_length ++] = '\n';
-        } else {
-            for (int j = 0; j < MAX_DEBUG_STRING_LENGTH - 1; j++) {
-                debug_text[j] = debug_text[j + 1];
-            }
-            debug_text[MAX_DEBUG_STRING_LENGTH - 1] = '\n';
-        }
-    }
-
-    // 补上'\0'
-    if (debug_text_length < MAX_DEBUG_STRING_LENGTH) {
-        debug_text[debug_text_length ++] = '\0';
-    } else {
-        for (int j = 0; j < MAX_DEBUG_STRING_LENGTH - 1; j++) {
-            debug_text[j] = debug_text[j + 1];
-        }
-        debug_text[MAX_DEBUG_STRING_LENGTH - 1] = '\0';
+        const char c = '\n';
+        write_buffer(&debug_buffer, &c, 1);
     }
 }
 
@@ -395,6 +367,7 @@ void draw_component(const Component *c) {
                 break;
             }
             case CORE_UI_DEBUG_PANEL: {
+                read_buffer(&debug_buffer, debug_text, MAX_DEBUG_TEXT_LENGTH, 0);
                 draw_text(debug_text, coord.X, coord.Y, c -> width, c -> height, c -> color);
                 break;
             }

@@ -8,7 +8,6 @@
 #include <windows.h>
 
 #include "language.h"
-#include "core_char.h"
 
 #define CORE_UI_UNKNOWN             0
 #define CORE_UI_LABEL               1
