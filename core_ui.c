@@ -32,6 +32,10 @@ static char ansi_color_string[32];
 static char time_string[32];
 static time_t current_time;
 
+// 帧率相关
+static int fps;
+static int frame_count;
+
 // 调试文本缓冲区
 static Buffer debug_buffer;
 static char debug_text[MAX_DEBUG_TEXT_LENGTH];
@@ -57,10 +61,6 @@ static volatile int window_height;
 
 // 键盘输入
 static volatile char key_information[256];
-
-
-
-
 
 // 输入线程函数
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
