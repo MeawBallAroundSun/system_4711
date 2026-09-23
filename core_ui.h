@@ -100,6 +100,8 @@ void refresh_time();
 
 void refresh_fps();
 
+void refresh_window_info();
+
 void draw_component(const Component *c);
 
 int draw_multilanguage_text(MultilanguageText text, short x, short y, short width, short height, int color);

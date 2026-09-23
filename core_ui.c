@@ -78,7 +78,7 @@ static unsigned __stdcall input_thread_function(void *args) {
     while (!thread_should_exit) {
         // 这里似乎有极其微小的概率输入的utf_8会被意外截断，但实测对程序稳定性无影响
         ReadConsoleA(input_handle, input_text, MAX_INPUT_TEXT_LENGTH, &read_count, NULL);
-        // 原地处理转义序列 （此段代码纯粹是枚举转义序列的常见情况，可读性差，总之能跑）
+        // 原地处理转义序列 （此段代码纯粹是枚举转义序列的常见情况，可读性差，总之能跑；另外没处理ctrl、shift、alt键的部分功能）
         char *w = input_text;
         for (int i = 0; i < read_count;) {
             char c;
@@ -111,6 +111,17 @@ static unsigned __stdcall input_thread_function(void *args) {
                                         case '7':   key_information[VK_F6]  = 1;        break;
                                         case '8':   key_information[VK_F7]  = 1;        break;
                                         case '9':   key_information[VK_F8]  = 1;        break;
+                                        case ';':
+                                            // 跳过5，之后不跳过~符号
+                                            switch (input_text[++ i]) {
+                                                case 'A':   key_information[VK_UP]      = 1;        break;
+                                                case 'B':   key_information[VK_DOWN]    = 1;        break;
+                                                case 'C':   key_information[VK_RIGHT]   = 1;        break;
+                                                case 'D':   key_information[VK_LEFT]    = 1;        break;
+                                                default:    break;
+                                            }
+                                            key_information[VK_CONTROL]     = 1;
+                                            break;
                                         default:    break;
                                     }
                                     i ++;   // 跳过~符号
@@ -134,7 +145,8 @@ static unsigned __stdcall input_thread_function(void *args) {
                                     *w = c;
                                     w ++;
                                     break;
-                                }
+                            }
+                            break;
 
                         default:
                             key_information[VK_ESCAPE] = 1;
@@ -182,6 +194,7 @@ static unsigned __stdcall input_thread_function(void *args) {
         *w = '\0';
         // 将处理后的纯文本流输入存入环形缓冲区
         write_buffer(&input_buffer, input_text, read_count);
+        print_debug(input_text, read_count, 0);
     }
     return 0;
 }
@@ -265,7 +278,8 @@ void print_debug(const char *text, const int length, const char ln) {
     }
 }
 
-void set_input_mode(char mode) {
+// 修改输入模式
+void set_input_mode(const char mode) {
     if (mode >= CONTROL_INPUT && mode <= STRING_INPUT) {
         input_mode = mode;
     } else {
@@ -427,6 +441,7 @@ void refresh_console() {
     refresh_fps();
 
     // 获取窗口大小
+    refresh_window_info();
 
     // 逐个绘制
     for (int i = 0; i < vector_size; i++) {
@@ -476,6 +491,13 @@ void refresh_fps() {
         frame_count ++;
     }
     sprintf(fps_string, "FPS : %d", fps);
+}
+
+void refresh_window_info() {
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    GetConsoleScreenBufferInfo(current_handle, &info);
+    window_width = info.srWindow.Right - info.srWindow.Left + 1;
+    window_height = info.srWindow.Bottom - info.srWindow.Top + 1;
 }
 
 void draw_component(const Component *c) {

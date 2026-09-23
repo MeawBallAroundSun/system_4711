@@ -39,7 +39,7 @@ void enter_welcome_page(const int state) {
             set_location(&clock, 0, 0);
             add_component(&clock);
 
-            set_location(&fps_panel, 32, 0);
+            set_location(&fps_panel, 40, 0);
             add_component(&fps_panel);
 
             set_location(&welcome_label, 0, 2);
@@ -73,6 +73,7 @@ int main(void) {
     const int language_profile = load_language_profile();
     enter_welcome_page(0);
     // set_language(en_US_4711);
+    set_input_mode(STRING_INPUT);
     while (1) {
         refresh_console();
     }
