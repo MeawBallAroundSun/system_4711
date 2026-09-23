@@ -9,6 +9,7 @@
 Component debug_panel;
 
 Component clock;
+Component fps_panel;
 Component welcome_label;
 Component choose_language_label;
 Component languages_box;
@@ -20,7 +21,9 @@ Component languages_box;
 // 创建全部组件
 void init_components() {
     debug_panel = create_debug_panel(0, 0, SELECTED_COLOR);
+
     clock = create_clock(0, 0, FOREGROUND_COLOR);
+    fps_panel = create_fps_panel(0, 0, FOREGROUND_COLOR);
     welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
     choose_language_label = create_label(&CHOOSE_LANGUAGE, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
     languages_box = create_choose_box(LANGUAGES, LANGUAGE_NUMBER, 0, 0, LANGUAGE_NUMBER / 2, 2, 16, 1, SELECTED_COLOR);
@@ -35,6 +38,9 @@ void enter_welcome_page(const int state) {
             // 新用户
             set_location(&clock, 0, 0);
             add_component(&clock);
+
+            set_location(&fps_panel, 32, 0);
+            add_component(&fps_panel);
 
             set_location(&welcome_label, 0, 2);
             add_component(&welcome_label);
@@ -55,6 +61,7 @@ void enter_welcome_page(const int state) {
         case 2:
             // 老用户
             break;
+        default: break;
     }
 }
 
@@ -66,10 +73,8 @@ int main(void) {
     const int language_profile = load_language_profile();
     enter_welcome_page(0);
     // set_language(en_US_4711);
-
     while (1) {
         refresh_console();
-
     }
 
 

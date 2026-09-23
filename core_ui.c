@@ -19,7 +19,7 @@
 #define MAX_DEBUG_TEXT_LENGTH         4096
 #define MAX_INPUT_TEXT_LENGTH         4096
 
-
+// 组件的vector变长数组
 static int vector_size = 0;
 static int vector_capacity = 0;
 static const Component **components;
@@ -33,8 +33,10 @@ static char time_string[32];
 static time_t current_time;
 
 // 帧率相关
+static char fps_string[16];
 static int fps;
 static int frame_count;
+static int last_second;
 
 // 调试文本缓冲区
 static Buffer debug_buffer;
@@ -43,7 +45,9 @@ static char debug_text[MAX_DEBUG_TEXT_LENGTH];
 // 输入缓冲区
 static Buffer input_buffer;
 static char input_text[MAX_INPUT_TEXT_LENGTH];
+static char input_mode;
 
+// 输入线程相关
 static HANDLE input_handle;
 static HANDLE thread_handle;
 static volatile char thread_should_exit;
@@ -53,9 +57,11 @@ static HANDLE handle_0;
 static HANDLE handle_1;
 static HANDLE current_handle;
 
+// 坐标
 static COORD origin_coord = {0, 0};
 static COORD cursor_coord = {0, 0};
 
+// 窗口尺寸
 static volatile int window_width;
 static volatile int window_height;
 
@@ -68,14 +74,114 @@ static unsigned __stdcall input_thread_function(void *args) {
     (void) args;
 
     DWORD read_count = 0;
-    char buffer[MAX_INPUT_TEXT_LENGTH];
 
     while (!thread_should_exit) {
-        // 这里似乎有极其微小的输入utf_8被意外截断的情况，但基本不影响程序稳定性
-        ReadConsoleA(input_handle, buffer, MAX_INPUT_TEXT_LENGTH, &read_count, NULL);
-        write_buffer(&input_buffer, buffer, read_count);
-        read_buffer(&input_buffer, buffer, read_count, 0);
-        print_debug(buffer, read_count, 1);
+        // 这里似乎有极其微小的概率输入的utf_8会被意外截断，但实测对程序稳定性无影响
+        ReadConsoleA(input_handle, input_text, MAX_INPUT_TEXT_LENGTH, &read_count, NULL);
+        // 原地处理转义序列 （此段代码纯粹是枚举转义序列的常见情况，可读性差，总之能跑）
+        char *w = input_text;
+        for (int i = 0; i < read_count;) {
+            char c;
+            switch (c = input_text[i ++]) {
+                case '\033':
+                    // 退出键或转义序列
+                    switch (c = input_text[i ++]) {
+                        case 'O':
+                            switch (input_text[i ++]) {
+                                case 'P':   key_information[VK_F1]          = 1;        break;
+                                case 'Q':   key_information[VK_F2]          = 1;        break;
+                                case 'R':   key_information[VK_F3]          = 1;        break;
+                                case 'S':   key_information[VK_F4]          = 1;        break;
+                                default:    break;
+                            }
+                            break;
+
+                        case '[':
+                            switch (c = input_text[i ++]) {
+                                case 'A':   key_information[VK_UP]          = 1;        break;
+                                case 'B':   key_information[VK_DOWN]        = 1;        break;
+                                case 'C':   key_information[VK_RIGHT]       = 1;        break;
+                                case 'D':   key_information[VK_LEFT]        = 1;        break;
+                                case 'H':   key_information[VK_HOME]        = 1;        break;
+                                case 'F':   key_information[VK_END]         = 1;        break;
+
+                                case '1':
+                                    switch (input_text[i ++]) {
+                                        case '5':   key_information[VK_F5]  = 1;        break;
+                                        case '7':   key_information[VK_F6]  = 1;        break;
+                                        case '8':   key_information[VK_F7]  = 1;        break;
+                                        case '9':   key_information[VK_F8]  = 1;        break;
+                                        default:    break;
+                                    }
+                                    i ++;   // 跳过~符号
+                                    break;
+
+                                case '2':
+                                    switch (input_text[i ++]) {
+                                        case '0':   key_information[VK_F9]  = 1;        break;
+                                        case '1':   key_information[VK_F10] = 1;        break;
+                                        case '3':   key_information[VK_F11] = 1;        break;
+                                        case '4':   key_information[VK_F12] = 1;        break;
+                                        default:    break;
+                                    }
+                                    i ++;   // 跳过~符号
+                                    break;
+
+                                default:
+                                    key_information[VK_ESCAPE] = 1;
+                                    *w = '[';
+                                    w ++;
+                                    *w = c;
+                                    w ++;
+                                    break;
+                                }
+
+                        default:
+                            key_information[VK_ESCAPE] = 1;
+                            *w = c;
+                            w ++;
+                            break;
+                    }
+                    break;
+
+                case '\n':
+                    // 回车
+                    if (input_mode == STRING_INPUT) {
+                        *w = '\n';
+                        w ++;
+                    } else {
+                        key_information[VK_RETURN] = 1;
+                    }
+                    break;
+
+                case 0x7F:      key_information[VK_DELETE]      = 1;        break;      // 退格
+                case 0x1A:      key_information[VK_PAUSE]       = 1;        break;      // 暂停
+
+                default:
+                    if (input_mode == CONTROL_INPUT) {
+                        const short k = VkKeyScanA(c);
+                        const char vk = LOBYTE(k);
+                        const char state = HIBYTE(k);
+                        if (vk != -1 && state != -1) {
+                            key_information[vk] = 1;
+                            switch (state) {
+                                case 1:     key_information[VK_SHIFT]   = 1;    break;
+                                case 2:     key_information[VK_CONTROL] = 1;    break;
+                                case 3:     key_information[VK_MENU]    = 1;    break;
+                                default:    break;
+                            }
+                        }
+                    } else {
+                        *w = c;
+                        w ++;
+                    }
+                    break;
+            }
+
+        }
+        *w = '\0';
+        // 将处理后的纯文本流输入存入环形缓冲区
+        write_buffer(&input_buffer, input_text, read_count);
     }
     return 0;
 }
@@ -115,6 +221,7 @@ void init_console() {
 
     // 初始化缓冲区
     create_buffer(&debug_buffer, CORE_BUFFER_RING, MAX_DEBUG_TEXT_LENGTH);
+    create_buffer(&input_buffer, CORE_BUFFER_RING, MAX_INPUT_TEXT_LENGTH);
 
     // 创建新线程处理输入
     input_handle = GetStdHandle(STD_INPUT_HANDLE);
@@ -125,6 +232,8 @@ void init_console() {
     thread_should_exit = 0;
     thread_handle = (HANDLE) _beginthreadex(NULL, 0, input_thread_function, NULL, 0, NULL);
     CloseHandle(thread_handle);
+
+    input_mode = CONTROL_INPUT;
 }
 
 // 退出控制台
@@ -134,6 +243,7 @@ void exit_console() {
 
     // 清理缓冲区
     release_buffer(&debug_buffer);
+    release_buffer(&input_buffer);
 
     // 其他的交给C运行时自动释放
 }
@@ -152,6 +262,14 @@ void print_debug(const char *text, const int length, const char ln) {
     if (ln) {
         const char c = '\n';
         write_buffer(&debug_buffer, &c, 1);
+    }
+}
+
+void set_input_mode(char mode) {
+    if (mode >= CONTROL_INPUT && mode <= STRING_INPUT) {
+        input_mode = mode;
+    } else {
+        input_mode = CONTROL_INPUT;
     }
 }
 
@@ -288,6 +406,11 @@ Component create_debug_panel(const short x, const short y, const int color) {
     return c;
 }
 
+Component create_fps_panel(const short x, const short y, const int color) {
+    const Component c = {CORE_UI_FPS_PANEL, 0, x, y, 16, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0};
+    return c;
+}
+
 void clear_console() {
     WriteConsole(current_handle, CLEAN_UP_CONSOLE, strlen(CLEAN_UP_CONSOLE), NULL, NULL);
 }
@@ -299,6 +422,9 @@ void refresh_console() {
 
     // 更新时间
     refresh_time();
+
+    // 更新fps
+    refresh_fps();
 
     // 获取窗口大小
 
@@ -316,9 +442,11 @@ void refresh_console() {
             case CORE_UI_CHOOSE_BOX: {
                 // 多选框
                 if (is_key_pressed(VK_DOWN)) {
-                    focused_component -> parameters[5] = (focused_component -> parameters[5] + 1) % focused_component -> texts_number;
+                    focused_component -> parameters[4] = (focused_component -> parameters[4] + 1) % focused_component -> texts_number;
                 }
+                break;
             }
+            default: break;
         }
     }
 
@@ -338,6 +466,18 @@ void refresh_time() {
     strftime(time_string, sizeof(time_string), "%Y / %m / %d    %H : %M : %S", localtime(&current_time));
 }
 
+// 更新fps字符串
+void refresh_fps() {
+    if (last_second != localtime(&current_time)->tm_sec) {
+        last_second = localtime(&current_time)->tm_sec;
+        fps = frame_count;
+        frame_count = 0;
+    } else {
+        frame_count ++;
+    }
+    sprintf(fps_string, "FPS : %d", fps);
+}
+
 void draw_component(const Component *c) {
     if (c != NULL) {
         COORD coord = c -> coord;
@@ -349,7 +489,7 @@ void draw_component(const Component *c) {
             }
             case CORE_UI_CHOOSE_BOX: {
                 for (int i = 0, column = 0, row = 0; i < c -> texts_number; i++) {
-                    if (i == c -> parameters[5]) {
+                    if (i == c -> parameters[4]) {
                         draw_multilanguage_text(c -> texts[i], (short) (coord.X + column * c -> parameters[2]), (short) (coord.Y + row * c -> parameters[3]), (short) c -> parameters[2], (short) c -> parameters[3], c -> color);
                     } else {
                         draw_multilanguage_text(c -> texts[i], (short) (coord.X + column * c -> parameters[2]), (short) (coord.Y + row * c -> parameters[3]), (short) c -> parameters[2], (short) c -> parameters[3], FOREGROUND_COLOR);
@@ -369,6 +509,10 @@ void draw_component(const Component *c) {
             case CORE_UI_DEBUG_PANEL: {
                 read_buffer(&debug_buffer, debug_text, MAX_DEBUG_TEXT_LENGTH, 0);
                 draw_text(debug_text, coord.X, coord.Y, c -> width, c -> height, c -> color);
+                break;
+            }
+            case CORE_UI_FPS_PANEL: {
+                draw_text(fps_string, coord.X, coord.Y, c -> width, c -> height, c -> color);
                 break;
             }
             default:
