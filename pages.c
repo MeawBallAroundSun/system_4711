@@ -27,6 +27,15 @@ void init_components() {
     languages_box = create_choose_box(LANGUAGES, LANGUAGE_NUMBER, 0, 0, LANGUAGE_NUMBER / 2, 2, 16, 1, SELECTED_COLOR);
 }
 
+// 顶部栏
+static void add_title_bar() {
+    set_location(&clock, 0, 0);
+    add_component(&clock);
+
+    set_location(&fps_panel, 40, 0);
+    add_component(&fps_panel);
+}
+
 // 进入欢迎界面
 void enter_welcome_page(const int state) {
     remove_all_components();
@@ -34,11 +43,7 @@ void enter_welcome_page(const int state) {
     switch (state) {
         case 0:
             // 新用户
-            set_location(&clock, 0, 0);
-            add_component(&clock);
-
-            set_location(&fps_panel, 40, 0);
-            add_component(&fps_panel);
+            add_title_bar();
 
             set_location(&welcome_label, 0, 2);
             add_component(&welcome_label);
@@ -58,6 +63,9 @@ void enter_welcome_page(const int state) {
         case 1:
         case 2:
             // 老用户
+            add_title_bar();
+
+
             break;
         default: break;
     }

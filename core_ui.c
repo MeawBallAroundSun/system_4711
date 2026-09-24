@@ -56,6 +56,7 @@ static volatile char thread_should_exit;
 static HANDLE handle_0;
 static HANDLE handle_1;
 static HANDLE current_handle;
+static CONSOLE_CURSOR_INFO cursor_info;
 
 // 坐标
 static COORD origin_coord = {0, 0};
@@ -66,7 +67,8 @@ static volatile int window_width;
 static volatile int window_height;
 
 // 键盘输入
-static volatile char key_information[256];
+static volatile char key_info_0[256];
+static char key_info_1[256];
 
 // 输入线程函数
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
@@ -88,39 +90,39 @@ static unsigned __stdcall input_thread_function(void *args) {
                     switch (c = input_text[i ++]) {
                         case 'O':
                             switch (input_text[i ++]) {
-                                case 'P':   key_information[VK_F1]          = 1;        break;
-                                case 'Q':   key_information[VK_F2]          = 1;        break;
-                                case 'R':   key_information[VK_F3]          = 1;        break;
-                                case 'S':   key_information[VK_F4]          = 1;        break;
+                                case 'P':   key_info_0[VK_F1]          = 1;        break;
+                                case 'Q':   key_info_0[VK_F2]          = 1;        break;
+                                case 'R':   key_info_0[VK_F3]          = 1;        break;
+                                case 'S':   key_info_0[VK_F4]          = 1;        break;
                                 default:    break;
                             }
                             break;
 
                         case '[':
                             switch (c = input_text[i ++]) {
-                                case 'A':   key_information[VK_UP]          = 1;        break;
-                                case 'B':   key_information[VK_DOWN]        = 1;        break;
-                                case 'C':   key_information[VK_RIGHT]       = 1;        break;
-                                case 'D':   key_information[VK_LEFT]        = 1;        break;
-                                case 'H':   key_information[VK_HOME]        = 1;        break;
-                                case 'F':   key_information[VK_END]         = 1;        break;
+                                case 'A':   key_info_0[VK_UP]          = 1;        break;
+                                case 'B':   key_info_0[VK_DOWN]        = 1;        break;
+                                case 'C':   key_info_0[VK_RIGHT]       = 1;        break;
+                                case 'D':   key_info_0[VK_LEFT]        = 1;        break;
+                                case 'H':   key_info_0[VK_HOME]        = 1;        break;
+                                case 'F':   key_info_0[VK_END]         = 1;        break;
 
                                 case '1':
                                     switch (input_text[i ++]) {
-                                        case '5':   key_information[VK_F5]  = 1;        break;
-                                        case '7':   key_information[VK_F6]  = 1;        break;
-                                        case '8':   key_information[VK_F7]  = 1;        break;
-                                        case '9':   key_information[VK_F8]  = 1;        break;
+                                        case '5':   key_info_0[VK_F5]  = 1;        break;
+                                        case '7':   key_info_0[VK_F6]  = 1;        break;
+                                        case '8':   key_info_0[VK_F7]  = 1;        break;
+                                        case '9':   key_info_0[VK_F8]  = 1;        break;
                                         case ';':
                                             // 跳过5，之后不跳过~符号
                                             switch (input_text[++ i]) {
-                                                case 'A':   key_information[VK_UP]      = 1;        break;
-                                                case 'B':   key_information[VK_DOWN]    = 1;        break;
-                                                case 'C':   key_information[VK_RIGHT]   = 1;        break;
-                                                case 'D':   key_information[VK_LEFT]    = 1;        break;
+                                                case 'A':   key_info_0[VK_UP]      = 1;        break;
+                                                case 'B':   key_info_0[VK_DOWN]    = 1;        break;
+                                                case 'C':   key_info_0[VK_RIGHT]   = 1;        break;
+                                                case 'D':   key_info_0[VK_LEFT]    = 1;        break;
                                                 default:    break;
                                             }
-                                            key_information[VK_CONTROL]     = 1;
+                                            key_info_0[VK_CONTROL]     = 1;
                                             break;
                                         default:    break;
                                     }
@@ -129,17 +131,17 @@ static unsigned __stdcall input_thread_function(void *args) {
 
                                 case '2':
                                     switch (input_text[i ++]) {
-                                        case '0':   key_information[VK_F9]  = 1;        break;
-                                        case '1':   key_information[VK_F10] = 1;        break;
-                                        case '3':   key_information[VK_F11] = 1;        break;
-                                        case '4':   key_information[VK_F12] = 1;        break;
+                                        case '0':   key_info_0[VK_F9]  = 1;        break;
+                                        case '1':   key_info_0[VK_F10] = 1;        break;
+                                        case '3':   key_info_0[VK_F11] = 1;        break;
+                                        case '4':   key_info_0[VK_F12] = 1;        break;
                                         default:    break;
                                     }
                                     i ++;   // 跳过~符号
                                     break;
 
                                 default:
-                                    key_information[VK_ESCAPE] = 1;
+                                    key_info_0[VK_ESCAPE] = 1;
                                     *w = '[';
                                     w ++;
                                     *w = c;
@@ -149,7 +151,7 @@ static unsigned __stdcall input_thread_function(void *args) {
                             break;
 
                         default:
-                            key_information[VK_ESCAPE] = 1;
+                            key_info_0[VK_ESCAPE] = 1;
                             *w = c;
                             w ++;
                             break;
@@ -163,12 +165,12 @@ static unsigned __stdcall input_thread_function(void *args) {
                         *w = '\n';
                         w ++;
                     } else {
-                        key_information[VK_RETURN] = 1;
+                        key_info_0[VK_RETURN] = 1;
                     }
                     break;
 
-                case 0x7F:      key_information[VK_DELETE]      = 1;        break;      // 退格
-                case 0x1A:      key_information[VK_PAUSE]       = 1;        break;      // 暂停
+                case 0x7F:      key_info_0[VK_DELETE]      = 1;        break;      // 退格
+                case 0x1A:      key_info_0[VK_PAUSE]       = 1;        break;      // 暂停
 
                 default:
                     if (input_mode == CONTROL_INPUT) {
@@ -176,11 +178,11 @@ static unsigned __stdcall input_thread_function(void *args) {
                         const char vk = LOBYTE(k);
                         const char state = HIBYTE(k);
                         if (vk != -1 && state != -1) {
-                            key_information[vk] = 1;
+                            key_info_0[vk] = 1;
                             switch (state) {
-                                case 1:     key_information[VK_SHIFT]   = 1;    break;
-                                case 2:     key_information[VK_CONTROL] = 1;    break;
-                                case 3:     key_information[VK_MENU]    = 1;    break;
+                                case 1:     key_info_0[VK_SHIFT]   = 1;    break;
+                                case 2:     key_info_0[VK_CONTROL] = 1;    break;
+                                case 3:     key_info_0[VK_MENU]    = 1;    break;
                                 default:    break;
                             }
                         }
@@ -291,9 +293,7 @@ void set_input_mode(const char mode) {
 // 输入虚拟键码，查询是否按下(读取后会将按键状态设为未按下，防止单次输入多次读取)
 char is_key_pressed(const int key) {
     if (key >= 0 && key < 256) {
-        const char b = key_information[key];
-        key_information[key] = 0;
-        return b;
+        return key_info_1[key];
     }
     return 0;
 }
@@ -313,6 +313,26 @@ void set_cursor_coord(const short x, const short y) {
     cursor_coord = coord;
     SetConsoleCursorPosition(handle_0, coord);
     SetConsoleCursorPosition(handle_1, coord);
+}
+
+void hide_cursor() {
+    GetConsoleCursorInfo(handle_0, &cursor_info);
+    cursor_info.bVisible = FALSE;
+    SetConsoleCursorInfo(handle_0, &cursor_info);
+
+    GetConsoleCursorInfo(handle_1, &cursor_info);
+    cursor_info.bVisible = FALSE;
+    SetConsoleCursorInfo(handle_1, &cursor_info);
+}
+
+void show_cursor() {
+    GetConsoleCursorInfo(handle_0, &cursor_info);
+    cursor_info.bVisible = TRUE;
+    SetConsoleCursorInfo(handle_0, &cursor_info);
+
+    GetConsoleCursorInfo(handle_1, &cursor_info);
+    cursor_info.bVisible = TRUE;
+    SetConsoleCursorInfo(handle_1, &cursor_info);
 }
 
 void add_component(const Component *c) {
@@ -449,6 +469,9 @@ void refresh_console() {
     // 获取窗口大小
     refresh_window_info();
 
+    // 刷新按键输入
+    refresh_input();
+
     // 逐个绘制
     for (int i = 0; i < vector_size; i++) {
         draw_component(components[i]);
@@ -513,21 +536,42 @@ void refresh_window_info() {
     window_height = info.srWindow.Bottom - info.srWindow.Top + 1;
 }
 
+void refresh_input() {
+    for (int i = 0; i < 256; i++) {
+        if (key_info_0[i]) {
+            key_info_0[i] = 0;
+            key_info_1[i] = 1;
+        } else {
+            key_info_1[i] = 0;
+        }
+    }
+}
+
 void draw_component(const Component *c) {
     if (c != NULL) {
-        COORD coord = c -> coord;
-        short remaining_height = c -> height;
+        const COORD coord = c -> coord;
+        const short x = coord.X;
+        short y = coord.Y;
+        const short w = c -> width;
+        const short h = c -> height;
+
+        if (x > window_width) {
+            return;
+        }
+
+        short remaining_height = h;
+
         switch (c -> type) {
             case CORE_UI_LABEL: {
-                draw_multilanguage_text(c -> texts[0], coord.X, coord.Y, c -> width, c -> height, c -> color);
+                draw_multilanguage_text(c -> texts[0], x, y, w, h, c -> color, NULL);
                 break;
             }
             case CORE_UI_CHOOSE_BOX: {
                 for (int i = 0, column = 0, row = 0; i < c -> texts_number; i++) {
                     if (i == c -> parameters[4]) {
-                        draw_multilanguage_text(c -> texts[i], (short) (coord.X + column * c -> parameters[2]), (short) (coord.Y + row * c -> parameters[3]), (short) c -> parameters[2], (short) c -> parameters[3], c -> color);
+                        draw_multilanguage_text(c -> texts[i], (short) (x + column * c -> parameters[2]), (short) (y + row * c -> parameters[3]), (short) c -> parameters[2], (short) c -> parameters[3], c -> color, NULL);
                     } else {
-                        draw_multilanguage_text(c -> texts[i], (short) (coord.X + column * c -> parameters[2]), (short) (coord.Y + row * c -> parameters[3]), (short) c -> parameters[2], (short) c -> parameters[3], FOREGROUND_COLOR);
+                        draw_multilanguage_text(c -> texts[i], (short) (x + column * c -> parameters[2]), (short) (y + row * c -> parameters[3]), (short) c -> parameters[2], (short) c -> parameters[3], FOREGROUND_COLOR, NULL);
                     }
                     column ++;
                     if (column == c -> parameters[0]) {
@@ -538,24 +582,25 @@ void draw_component(const Component *c) {
                 break;
             }
             case CORE_UI_CLOCK: {
-                draw_text(time_string, coord.X, coord.Y, c -> width, c -> height, c -> color);
+                draw_text(time_string, x, y, w, h, c -> color, NULL);
                 break;
             }
             case CORE_UI_DEBUG_PANEL: {
                 read_buffer(&debug_buffer, debug_text, MAX_DEBUG_TEXT_LENGTH, 0);
-                draw_text(debug_text, coord.X, coord.Y, c -> width, c -> height, c -> color);
+                int skip = c -> parameters[0];
+                draw_text(debug_text, x, y, w, h, c -> color, &skip);
                 break;
             }
             case CORE_UI_FPS_PANEL: {
-                draw_text(fps_string, coord.X, coord.Y, c -> width, c -> height, c -> color);
+                draw_text(fps_string, x, y, w, h, c -> color, NULL);
                 break;
             }
             default:
             case CORE_UI_UNKNOWN: {
                 for (int i = 0; i < c -> texts_number; i++) {
-                    const int h = (short) draw_multilanguage_text(c -> texts[i], coord.X, coord.Y, c -> width, remaining_height, c -> color);
-                    coord.Y += h; // NOLINT(*-narrowing-conversions)
-                    remaining_height -= h; // NOLINT(*-narrowing-conversions)
+                    const int th = (short) draw_multilanguage_text(c -> texts[i], x, y, w, remaining_height, c -> color, NULL);
+                    y = (short) (y + th);
+                    remaining_height = (short) (remaining_height - th);
                 }
                 break;
             }
@@ -563,59 +608,79 @@ void draw_component(const Component *c) {
     }
 }
 
-int draw_multilanguage_text(const MultilanguageText text, const short x, const short y, const short width, const short height, const int color) {
+int draw_multilanguage_text(const MultilanguageText text, const short x, const short y, const short width, const short height, const int color, int *skip) {
     int h = 0;
+    short w2 = (short) (window_width - x);
+    if (w2 > width) {
+        w2 = width;
+    }
     switch (get_language()) {
         case 1:
-            h += draw_text(text.en_US, x, y, width, height, color);
+            h += draw_text(text.en_US, x, y, w2, height, color, skip);
             break;
         case 2:
-            h += draw_text(text.zh_CN, x, y, width, height, color);
+            h += draw_text(text.zh_CN, x, y, w2, height, color, skip);
             break;
         default:
-            h += draw_text(text.en_US, x, y, width, height, color);
-            h += draw_text(text.zh_CN, x, (short) (y + h), width, (short) (height - h), color);
+            h += draw_text(text.en_US, x, y, w2, height, color, skip);
+            h += draw_text(text.zh_CN, x, (short) (y + h), w2, (short) (height - h), color, skip);
             break;
     }
     return h;
 }
 
-int draw_text(const char *text, const short x, const short y, const short width, const short height, const int color) {
+int draw_text(const char *text, const short x, const short y, const short width, const short height, const int color, int *skip) {
     COORD coord = {x, y};
     const char *s = text;
     int output_height = 0;
     set_color(color);
+
+    // 跳过skip行
+    if (skip != NULL) {
+        int skip_count = 0;
+        for (short i = 0; i < *skip;) {
+            if (!s[0]) {
+                break;
+            }
+            if (s[0] == '\n' || s[0] == '\r') {
+                // 换行
+                s ++;
+                i ++, skip_count ++;
+            } else if (s[0] == '\t' || s[0] == ' ') {
+                // 制表，功能暂不实现，仅跳过
+                // 或者空格，跳过
+                s++;
+            } else {
+                const int line_length = get_line_length(s, width);
+                s += line_length;
+                if (s[0] != '\n' && s[0] != '\r') {
+                    i ++, skip_count ++;
+                }
+            }
+        }
+        *skip -= skip_count;
+    }
+
+
     for (short i = y; i < y + height;) {
         if (!s[0]) {
             break;
         }
-        if (
-            s[0] == '\n'            ||
-            s[0] == '\r'
-        ) {
+        if (s[0] == '\n' || s[0] == '\r') {
             // 换行
             s ++;
             coord.X = x;
             i ++, coord.Y ++, output_height ++;
-        } else if (
-            s[0] == '\t'
-        ) {
+        } else if (s[0] == '\t' || s[0] == ' ') {
             // 制表，功能暂不实现，仅跳过
+            // 或者空格，跳过
             s++;
-        } else if (
-            s[0] == ' '
-        ) {
-            // 行头空格，跳过
-            s ++;
         } else {
             const int line_length = get_line_length(s, width);
             SetConsoleCursorPosition(current_handle, coord);
             WriteConsole(current_handle, s, line_length, NULL, NULL);
             s += line_length;
-            if (
-                s[0] != '\n'        &&
-                s[0] != '\r'
-            ) {
+            if (s[0] != '\n' && s[0] != '\r') {
                 i ++, coord.Y ++, output_height ++;
             }
         }

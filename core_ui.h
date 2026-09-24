@@ -62,6 +62,10 @@ void set_console_size(short width, short height);
 
 void set_cursor_coord(short x, short y);
 
+void hide_cursor();
+
+void show_cursor();
+
 void add_component(const Component *c);
 
 void set_focused_component(Component *c);
@@ -100,11 +104,13 @@ void refresh_fps();
 
 void refresh_window_info();
 
+void refresh_input();
+
 void draw_component(const Component *c);
 
-int draw_multilanguage_text(MultilanguageText text, short x, short y, short width, short height, int color);
+int draw_multilanguage_text(MultilanguageText text, short x, short y, short width, short height, int color, int *skip);
 
-int draw_text(const char *text, short x, short y, short width, short height, int color);
+int draw_text(const char *text, short x, short y, short width, short height, int color, int *skip);
 
 int get_line_length(const char *text, short width);
 
