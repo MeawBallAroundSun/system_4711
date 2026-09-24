@@ -7,10 +7,7 @@
 
 #include "language.h"
 
-
 #define LANGUAGE_NUMBER 2
-
-
 
 extern MultilanguageText WELCOME;
 extern MultilanguageText CHOOSE_LANGUAGE;

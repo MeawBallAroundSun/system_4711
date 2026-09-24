@@ -156,6 +156,7 @@ static unsigned __stdcall input_thread_function(void *args) {
                     }
                     break;
 
+                case '\r':
                 case '\n':
                     // 回车
                     if (input_mode == STRING_INPUT) {
@@ -458,12 +459,17 @@ void refresh_console() {
                 // 多选框
                 if (is_key_pressed(VK_DOWN)) {
                     focused_component -> parameters[4] = (focused_component -> parameters[4] + 1) % focused_component -> texts_number;
+                } else if (is_key_pressed(VK_RETURN)) {
+                    focused_component -> call_back(focused_component -> parameters[4]);
                 }
                 break;
             }
             default: break;
         }
     }
+
+    SetConsoleCursorPosition(handle_0, cursor_coord);
+    SetConsoleCursorPosition(handle_1, cursor_coord);
 
     // 交换缓冲区
     if (current_handle == handle_0) {
