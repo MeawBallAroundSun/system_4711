@@ -7,13 +7,15 @@
 
 #include "core_ui.h"
 
-Component debug_panel;
-Component clock;
-Component fps_panel;
+extern Component debug_panel;
+extern Component clock;
+extern Component fps_panel;
 
-Component welcome_label;
-Component choose_language_label;
-Component languages_box;
+extern Component welcome_label;
+extern Component choose_language_label;
+extern Component languages_box;
+
+void init_components();
 
 void enter_welcome_page(int state);
 void enter_create_administrator_account_page(int state);

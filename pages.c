@@ -5,6 +5,17 @@
 #include "pages.h"
 #include "assets.h"
 
+Component debug_panel;
+Component clock;
+Component fps_panel;
+
+Component welcome_label;
+Component choose_language_label;
+Component languages_box;
+
+
+
+
 // 创建全部组件
 void init_components() {
     debug_panel = create_debug_panel(0, 0, SELECTED_COLOR);
@@ -15,7 +26,6 @@ void init_components() {
     choose_language_label = create_label(&CHOOSE_LANGUAGE, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
     languages_box = create_choose_box(LANGUAGES, LANGUAGE_NUMBER, 0, 0, LANGUAGE_NUMBER / 2, 2, 16, 1, SELECTED_COLOR);
 }
-
 
 // 进入欢迎界面
 void enter_welcome_page(const int state) {

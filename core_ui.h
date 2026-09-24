@@ -82,12 +82,10 @@ void set_box_choose(Component *c, int index);
 
 Component create_label(MultilanguageText *text, short x, short y, short width, short height, int color);
 
-// ChooseBox组件参数：列数，行数，列宽，行高，当前选中的索引数，当前页数，总页数
 Component create_choose_box(MultilanguageText *text, int number, short x, short y, short column, short row, short grid_width, short grid_height, int color);
 
 Component create_clock(short x, short y, int color);
 
-// DebugPanel组件参数：当前行数，总行数
 Component create_debug_panel(short x, short y, int color);
 
 Component create_fps_panel(short x, short y, int color);

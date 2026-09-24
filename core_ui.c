@@ -194,8 +194,8 @@ static unsigned __stdcall input_thread_function(void *args) {
         }
         *w = '\0';
         // 将处理后的纯文本流输入存入环形缓冲区
-        write_buffer(&input_buffer, input_text, read_count);
-        print_debug(input_text, read_count, 0);
+        write_buffer(&input_buffer, input_text, (int) read_count);
+        print_debug(input_text, (int) read_count, 0);
     }
     return 0;
 }
@@ -372,13 +372,13 @@ void remove_all_components() {
 }
 
 void set_location(Component *c, const int x, const int y) {
-    const COORD new_coord = {x, y};
+    const COORD new_coord = {(short) x, (short) y};
     c -> coord = new_coord;
 }
 
 void set_size(Component *c, const int width, const int height) {
-    c -> width = width < CORE_UI_MINIMAL_TEXT_WIDTH ? CORE_UI_MINIMAL_TEXT_WIDTH : width;
-    c -> height = height;
+    c -> width = width < CORE_UI_MINIMAL_TEXT_WIDTH ? CORE_UI_MINIMAL_TEXT_WIDTH : (short) width;
+    c -> height = (short) height;
 }
 
 void set_box_choose(Component *c, const int index) {
@@ -395,11 +395,12 @@ Component create_label(MultilanguageText *text, const short x, const short y, co
     } else {
         w = width;
     }
-    const Component c = {CORE_UI_LABEL, 0, x, y, w, height, color, {0, 0, 0, 0, 0, 0, 0, 0}, 1, text};
+    const Component c = {CORE_UI_LABEL, 0, x, y, w, height, color, {0, 0, 0, 0, 0, 0, 0, 0}, 1, text, NULL, NULL};
     return c;
 }
 
-//创建多选框
+// 创建多选框
+// 参数列表：列数，行数，列宽，行高，当前选中的索引数，当前页数，总页数
 Component create_choose_box(MultilanguageText *text, const int number, const short x, const short y, const short column, const short row, const short grid_width, const short grid_height, const int color) {
     short w;
     if (grid_width < CORE_UI_MINIMAL_TEXT_WIDTH) {
@@ -407,22 +408,26 @@ Component create_choose_box(MultilanguageText *text, const int number, const sho
     } else {
         w = grid_width;
     }
-    const Component c = {CORE_UI_CHOOSE_BOX, CORE_UI_FOCUSABLE, x, y, (short) (w * column), (short) (grid_height * row), color, {column, row, w, grid_height, 0, 0, 0, 0}, number, text};
+    const Component c = {CORE_UI_CHOOSE_BOX, CORE_UI_FOCUSABLE, x, y, (short) (w * column), (short) (grid_height * row), color, {column, row, w, grid_height, 0, 0, 0, 0}, number, text, NULL, NULL};
     return c;
 }
 
+// 创建时钟
 Component create_clock(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_CLOCK, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0};
+    const Component c = {CORE_UI_CLOCK, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL};
     return c;
 }
 
+// 创建调试面板
+// 参数列表：当前行数，总行数
 Component create_debug_panel(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0};
+    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL};
     return c;
 }
 
+// 创建FPS面板
 Component create_fps_panel(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_FPS_PANEL, 0, x, y, 16, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0};
+    const Component c = {CORE_UI_FPS_PANEL, 0, x, y, 16, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL};
     return c;
 }
 
@@ -449,7 +454,7 @@ void refresh_console() {
         draw_component(components[i]);
     }
 
-    // 挪回光标
+    // 挪回光标（下面可能再挪走光标）
     SetConsoleCursorPosition(current_handle, origin_coord);
 
     // 处理特殊组件的逻辑
@@ -460,7 +465,9 @@ void refresh_console() {
                 if (is_key_pressed(VK_DOWN)) {
                     focused_component -> parameters[4] = (focused_component -> parameters[4] + 1) % focused_component -> texts_number;
                 } else if (is_key_pressed(VK_RETURN)) {
-                    focused_component -> call_back(focused_component -> parameters[4]);
+                    if (focused_component -> call_back != NULL) {
+                        focused_component -> call_back(focused_component -> parameters[4]);
+                    }
                 }
                 break;
             }
@@ -594,7 +601,7 @@ int draw_text(const char *text, const short x, const short y, const short width,
             s[0] == '\t'
         ) {
             // 制表，功能暂不实现，仅跳过
-            s ++;
+            s++;
         } else if (
             s[0] == ' '
         ) {

@@ -4,7 +4,6 @@
 
 #include "language.h"
 #include "core_ui.h"
-#include "assets.h"
 #include "pages.h"
 
 
