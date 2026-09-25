@@ -3,13 +3,7 @@
 //
 
 
-#include <windows.h>
-#include <stdio.h>
-#include <time.h>
-
 #include "database_4711.h"
-
-
 
 
 // 账户Vector
@@ -22,14 +16,113 @@ static int iv_size = 0;
 static int iv_capacity = 0;
 static Item **iv;
 
-// 消息Vector
+// 记录Vector
 // Record会进行malloc操作分配内存，注意free
 static int rv_size = 0;
 static int rv_capacity = 0;
 static Record **rv;
 
+// 账单记录Vector
+static int ruv_size = 0;
+static int ruv_capacity = 0;
+static RecordUnit **ruv;
 
 
+int input_command(const char *command) {
+    char buffer_0[1024];
+    char buffer_1[1024];
+    char buffer_2[1024];
+    char buffer_3[1024];
+
+    switch (sscanf(command, "%s%s%s%s", buffer_0, buffer_1, buffer_2, buffer_3)) {
+        case 1: {
+            if (strcmp(buffer_0, "checkout") == 0 || strcmp(buffer_0, "结账") == 0) {
+                command_checkout();
+            }
+            break;
+        }
+        case 2: {
+            if (strcmp(buffer_0, "search") == 0 || strcmp(buffer_0, "查找") == 0) {
+                command_search(buffer_1);
+            }
+            break;
+        }
+        case 3: {
+            if (strcmp(buffer_0, "pick") == 0 || strcmp(buffer_0, "取货") == 0) {
+                command_pick(buffer_1, buffer_2);
+            }
+            break;
+        }
+        case 4: {
+            break;
+        }
+        default: {
+            break;
+        }
+    }
+
+
+    return DB_ERROR;
+}
+
+int command_pick(const char *key_word, const char *number) {
+    const int index = command_search(key_word);
+    if (index == -1) {
+        return DB_ERROR;
+    }
+
+    const Item *item = iv[index];
+
+    int mode = 1;
+    if (number[0] == '+') {
+        mode = 1;
+        number ++;
+    } else if (number[0] == '-') {
+        mode = -1;
+        number ++;
+    } else if (number[0] == 's') {
+        mode = 0;
+        number ++;
+    }
+
+    int n;
+    if (sscanf(number, "%d", &n) != 1) { // NOLINT(*-err34-c)
+        return DB_ERROR;
+    }
+
+    if (n < 0) {
+        return DB_ERROR;
+    }
+
+    if (item -> stock <= 0 && mode >= 0) {
+        return DB_ERROR;
+    }
+
+    add_ru(item, n, mode);
+    return DB_FINE;
+}
+
+int command_checkout() {
+
+}
+
+int command_search(const char *key_word) {
+    int key_id;
+    if (sscanf(key_word, "%d", &key_id) == 1) { // NOLINT(*-err34-c)
+        for (int i = 0; i < iv_size; i++) {
+            if (key_id != -1 && key_id == iv[i] -> id) {
+                return i;
+            }
+        }
+    }
+
+    for (int i = 0; i < iv_size; i++) {
+        if (strcmp(key_word, iv[i] -> name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
 
 // 初始化数据库
 int init_database() {
@@ -72,8 +165,16 @@ int ensure_folder(const char *path) {
 
 
 
+
 // 导入账户
 int init_accounts() {
+    for (int i = 0; i < av_size; i ++) {
+        free(av[i] -> name);
+        free(av[i] -> password);
+        free(av[i]);
+    }
+    av_size = 0;
+
     FILE *file = fopen(DB_ACCOUNT_PATH, "r");
     if (file == NULL) {
         return DB_ERROR;
@@ -122,6 +223,11 @@ void add_account(Account *account) {
 
 void save_account() {
     FILE *file = fopen(DB_ACCOUNT_PATH, "w");
+
+    if (file == NULL) {
+        return;
+    }
+
     for (int i = 0; i < av_size; i++) {
         fprintf(file, "%s\t", av[i] -> name);
         fprintf(file, "%s\t", av[i] -> password);
@@ -134,11 +240,29 @@ void save_account() {
     fclose(file);
 }
 
+int get_account_number() {
+    return av_size;
+}
+
+Account *get_account(const int index) {
+    if (index >= 0 && index < av_size) {
+        return av[index];
+    }
+    return NULL;
+}
+
+
 
 
 
 // 导入物品
 int init_items() {
+    for (int i = 0; i < iv_size; i ++) {
+        free(iv[i] -> name);
+        free(iv[i]);
+    }
+    iv_size = 0;
+
     FILE *file = fopen(DB_ITEM_PATH, "r");
     if (file == NULL) {
         return DB_ERROR;
@@ -181,8 +305,7 @@ void add_item(Item *item) {
 }
 
 void delete_item(const Item *item) {
-    int i;
-    for (i = 0; i < iv_size; i++) {
+    for (int i = 0; i < iv_size; i++) {
         if (iv[i] -> id == item -> id) {
             free(iv[i] -> name);
             free(iv[i]);
@@ -197,6 +320,11 @@ void delete_item(const Item *item) {
 
 void save_item() {
     FILE *file = fopen(DB_ITEM_PATH, "w");
+
+    if (file == NULL) {
+        return;
+    }
+
     for (int i = 0; i < iv_size; i++) {
         fprintf(file, "%d\t", iv[i] -> id);
         fprintf(file, "%s\t", iv[i] -> name);
@@ -206,18 +334,23 @@ void save_item() {
     fclose(file);
 }
 
+int get_item_number() {
+    return iv_size;
+}
+
+Item *get_item(const int index) {
+    if (index >= 0 && index < iv_size) {
+        return iv[index];
+    }
+    return NULL;
+}
+
 
 
 
 
 // 导入某天的记录
 int init_records(const struct tm time) {
-    char path[256];
-    sprintf(path, "%s%d_%d_%d.txt", DB_RECORD_PATH, time.tm_year + 1900, time.tm_mon + 1, time.tm_mday);
-    FILE *file = fopen(path, "r");
-    if (file == NULL) {
-        return DB_ERROR;
-    }
     // 释放内存
     for (int i = 0; i < rv_size; i++) {
         for (int j = 0; j < rv[i] -> length; j++) {
@@ -227,6 +360,16 @@ int init_records(const struct tm time) {
         free(rv[i]);
     }
     rv_size = 0;
+
+
+    char path[256];
+    sprintf(path, "%s%d_%d_%d.txt", DB_RECORD_PATH, time.tm_year + 1900, time.tm_mon + 1, time.tm_mday);
+    FILE *file = fopen(path, "r");
+
+    if (file == NULL) {
+        return DB_ERROR;
+    }
+
 
     int year, month, day, hour, minute, second, length;
     int id, price, number;
@@ -288,6 +431,11 @@ void save_record(const struct tm time) {
     char path[256];
     sprintf(path, "%s%d_%d_%d.txt", DB_RECORD_PATH, time.tm_year + 1900, time.tm_mon + 1, time.tm_mday);
     FILE *file = fopen(path, "w");
+
+    if (file == NULL) {
+        return;
+    }
+
     for (int i = 0; i < rv_size; i++) {
         fprintf(file, "%d\t", rv[i] -> year);
         fprintf(file, "%d\t", rv[i] -> month);
@@ -304,6 +452,117 @@ void save_record(const struct tm time) {
         }
     }
     fclose(file);
+}
+
+int get_record_number() {
+    return rv_size;
+}
+
+Record *get_record(const int index) {
+    if (index >= 0 && index < rv_size) {
+        return rv[index];
+    }
+    return NULL;
+}
+
+
+
+
+// 根据物品增加记录，模式为1（增加），0（设置）和-1（减少）
+void add_ru(const Item *item, const int number, const int mode) {
+    if (item == NULL) {
+        return;
+    }
+
+    const int id = item -> id;
+    const char *name = item -> name;
+    int ruv_index = -1;
+
+    // 检索是否已有此RecordUnit
+    for (int i = 0; i < ruv_size; i++) {
+        if (ruv[i] -> id == id && strcmp(name, ruv[i] -> name) == 0) {
+            ruv_index = i;
+            break;
+        }
+    }
+
+    if (ruv_index == -1) {
+        if (mode >= 0) {
+            const int n = number <= item -> stock ? number : item -> stock;
+            if (n <= 0) {
+                return;
+            }
+            RecordUnit *unit = malloc(sizeof(RecordUnit));
+            unit -> id = id;
+            unit -> name = malloc(strlen(name) + 1);
+            strcpy(unit -> name, name);
+            unit -> price = item -> price;
+            unit -> number = n;
+
+            if (ruv_capacity == 0) {
+                ruv_capacity = 16;
+                ruv = malloc(sizeof(RecordUnit *) * ruv_capacity);
+            }
+
+            if (ruv_size >= ruv_capacity) {
+                ruv_capacity *= 2;
+                RecordUnit **new_ruv = malloc(sizeof(RecordUnit *) * ruv_capacity);
+                for (int i = 0; i < ruv_size; i++) {
+                    new_ruv[i] = ruv[i];
+                }
+                free(ruv);
+                ruv = new_ruv;
+            }
+            ruv[ruv_size ++] = unit;
+        }
+    } else {
+        RecordUnit *unit = ruv[ruv_index];
+        if (mode == 0) {
+            unit -> number = number;
+        } else if (mode > 0) {
+            unit -> number += number;
+        } else {
+            unit -> number -= number;
+        }
+
+        if (unit -> number > item -> stock) {
+            unit -> number = item -> stock;
+        }
+        if (unit -> number <= 0) {
+            delete_ru(ruv_index);
+        }
+
+    }
+}
+
+void delete_ru(const int index) {
+    if (index >= 0 && index < ruv_size) {
+        free(ruv[index] -> name);
+        free(ruv[index]);
+        for (int i = index; i < ruv_size - 1; i++) {
+            ruv[i] = ruv[i + 1];
+        }
+        ruv_size --;
+    }
+}
+
+void delete_all_ru() {
+    for (int i = 0; i < ruv_size; i++) {
+        free(ruv[i] -> name);
+        free(ruv[i]);
+    }
+    ruv_size = 0;
+}
+
+int get_ru_number() {
+    return ruv_size;
+}
+
+RecordUnit *get_ru(const int index) {
+    if (index >= 0 && index < ruv_size) {
+        return ruv[index];
+    }
+    return NULL;
 }
 
 
