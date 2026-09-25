@@ -15,6 +15,7 @@
 #define CORE_UI_CLOCK               3
 #define CORE_UI_DEBUG_PANEL         4
 #define CORE_UI_FPS_PANEL           5
+#define CORE_UI_INPUT_BOX           6
 
 #define CORE_UI_CONSOLE_WIDTH       256
 #define CORE_UI_CONSOLE_HEIGHT      144
@@ -24,6 +25,12 @@
 #define LINE_INPUT                  1               // 回车转按键
 #define STRING_INPUT                2               // 除控制符外均使用文本，由于鼠标输入较为复杂暂未引入，此状态又无法通过回车退出，故几乎不用
 
+#define CORE_UI_EAST                0
+#define CORE_UI_NORTH               1
+#define CORE_UI_WEST                2
+#define CORE_UI_SOUTH               3
+
+
 #define CORE_UI_FOCUSABLE           0x00000001
 #define CORE_UI_BORD                0x00000006
 
@@ -31,6 +38,7 @@
 #define DEFAULT_COLOR_ANSI          "\033[0m"
 #define FOREGROUND_COLOR            0xFFFFFF
 #define SELECTED_COLOR              0xB040A0
+#define DISABLED_COLOR              0x808080
 
 typedef struct Component {
     int type;
@@ -42,6 +50,7 @@ typedef struct Component {
     int parameters[8];
     int texts_number;
     MultilanguageText *texts;
+    char *input;
     char *image;
     void (*call_back) (int state);
 } Component;
@@ -62,13 +71,19 @@ void set_console_size(short width, short height);
 
 void set_cursor_coord(short x, short y);
 
+void fix_cursor_coord();
+
 void hide_cursor();
 
 void show_cursor();
 
-void add_component(const Component *c);
+void add_component(Component *c);
 
 void set_focused_component(Component *c);
+
+void throw_focus(const Component *c);
+
+void move_focus(const Component *c, int direction);
 
 int get_component_index(const Component *c);
 
@@ -84,6 +99,10 @@ void set_size(Component *c, int width, int height);
 
 void set_box_choose(Component *c, int index);
 
+void set_box_input(Component *c, const char *text);
+
+void set_call_back(Component *c, void (*callback) (int state));
+
 Component create_label(MultilanguageText *text, short x, short y, short width, short height, int color);
 
 Component create_choose_box(MultilanguageText *text, int number, short x, short y, short column, short row, short grid_width, short grid_height, int color);
@@ -93,6 +112,8 @@ Component create_clock(short x, short y, int color);
 Component create_debug_panel(short x, short y, int color);
 
 Component create_fps_panel(short x, short y, int color);
+
+Component create_input_box(short x, short y, short width, short height, int length, int color);
 
 void clear_console();
 
@@ -106,7 +127,7 @@ void refresh_window_info();
 
 void refresh_input();
 
-void draw_component(const Component *c);
+void draw_component(Component *c);
 
 int draw_multilanguage_text(MultilanguageText text, short x, short y, short width, short height, int color, int *skip);
 

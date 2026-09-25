@@ -4,7 +4,7 @@
 
 #include "core_char.h"
 
-// 计算下一个utf_8字符的Unicode码
+// 计算下一个utf_8字符的Unicode码（注：5、6个字节的utf_8已弃用）
 UnicodeCharacter get_next_utf_8(const char *text) {
     const unsigned char *s = (unsigned char *) text;
     unsigned char c = s[0];
@@ -15,7 +15,7 @@ UnicodeCharacter get_next_utf_8(const char *text) {
             if ((c & 0xF0) == 0xF0) {
                 if ((c & 0xF8) == 0xF8) {
                     if ((c & 0xFC) == 0xFC) {
-                        // 6字节
+                        // 6 字节
                         length = 6;
                         unicode = c & 0x1;
                         for (int i = 1; i < 6; i++) {
@@ -24,7 +24,7 @@ UnicodeCharacter get_next_utf_8(const char *text) {
                             unicode |= c & 0x3F;
                         }
                     } else {
-                        // 5字节
+                        // 5 字节
                         length = 5;
                         unicode = c & 0x3;
                         for (int i = 1; i < 5; i++) {
@@ -34,7 +34,7 @@ UnicodeCharacter get_next_utf_8(const char *text) {
                         }
                     }
                 } else {
-                    // 4字节
+                    // 4 字节
                     length = 4;
                     unicode = c & 0x7;
                     for (int i = 1; i < 4; i++) {
@@ -44,7 +44,7 @@ UnicodeCharacter get_next_utf_8(const char *text) {
                     }
                 }
             } else {
-                // 3字节
+                // 3 字节
                 length = 3;
                 unicode = c & 0xF;
                 for (int i = 1; i < 3; i++) {
@@ -54,7 +54,7 @@ UnicodeCharacter get_next_utf_8(const char *text) {
                 }
             }
         } else {
-            // 2字节
+            // 2 字节
             length = 2;
             unicode = c & 0x1F;
             unicode = unicode << 6;
@@ -62,13 +62,25 @@ UnicodeCharacter get_next_utf_8(const char *text) {
             unicode |= c & 0x3F;
         }
     } else {
-        // 1字节
+        // 1 字节
         length = 1;
         unicode = c;
     }
 
     const UnicodeCharacter uc = {unicode, get_area(unicode), is_full_width(unicode), length};
     return uc;
+}
+
+// 计算上一个utf_8字符的Unicode码
+UnicodeCharacter get_last_utf_8(const char *text) {
+    const char * r = text;
+    for (int i = 0; i < 6; i++) {
+        if ((*r & 0xC0) != 0x80) {
+            break;
+        }
+        r --;
+    }
+    return get_next_utf_8(r);
 }
 
 // 判断一个Unicode码的全半角

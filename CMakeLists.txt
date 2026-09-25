@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 11)
 
 add_executable(
         system_4711
-        main_core.c
+        main_4711.c
         database_4711.h
         database_4711.c
         language.h

@@ -5,10 +5,14 @@
 #ifndef SYSTEM_4711_DATABASE_4711_H
 #define SYSTEM_4711_DATABASE_4711_H
 
-#define DB_FINE 0
-#define DB_ERROR 1
+#define DB_FINE                 0
+#define DB_ERROR                1
 
 
+
+int init_folders();
+
+int ensure_folder(const char *path);
 
 
 

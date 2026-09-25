@@ -26,9 +26,13 @@ typedef struct UnicodeCharacter {
 
 UnicodeCharacter get_next_utf_8(const char *text);
 
+UnicodeCharacter get_last_utf_8(const char *text);
+
 char is_full_width(unsigned int unicode);
 
 short get_area(unsigned int unicode);
+
+
 
 
 #endif //SYSTEM_4711_CORE_CHAR_H

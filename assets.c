@@ -36,6 +36,13 @@ MultilanguageText CREATE_CRASHER_ACCOUNT = {
     "创建营业员账户："
 };
 
+MultilanguageText CREATE_ADMINISTRATOR_ACCOUNT_BOX[1] = {
+    {
+    "Create an administrator account",
+    "创建管理员账户"
+    }
+};
+
 MultilanguageText INPUT_NAME = {
     "Name:",
     "名称："

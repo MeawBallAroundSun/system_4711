@@ -16,6 +16,7 @@ extern MultilanguageText LANGUAGES[LANGUAGE_NUMBER];
 
 extern MultilanguageText CREATE_ADMINISTRATOR_ACCOUNT;
 extern MultilanguageText CREATE_CRASHER_ACCOUNT;
+extern MultilanguageText CREATE_ADMINISTRATOR_ACCOUNT_BOX[1];
 
 extern MultilanguageText INPUT_NAME;
 extern MultilanguageText INPUT_PASSWORD;

@@ -22,7 +22,7 @@
 // 组件的vector变长数组
 static int vector_size = 0;
 static int vector_capacity = 0;
-static const Component **components;
+static Component **components;
 static Component *focused_component;
 
 // ANSI颜色代码
@@ -46,6 +46,7 @@ static char debug_text[MAX_DEBUG_TEXT_LENGTH];
 static Buffer input_buffer;
 static char input_text[MAX_INPUT_TEXT_LENGTH];
 static char input_mode;
+static char input_box_text_buffer[MAX_INPUT_TEXT_LENGTH];
 
 // 输入线程相关
 static HANDLE input_handle;
@@ -57,6 +58,7 @@ static HANDLE handle_0;
 static HANDLE handle_1;
 static HANDLE current_handle;
 static CONSOLE_CURSOR_INFO cursor_info;
+static CONSOLE_SCREEN_BUFFER_INFO screen_info;
 
 // 坐标
 static COORD origin_coord = {0, 0};
@@ -166,6 +168,16 @@ static unsigned __stdcall input_thread_function(void *args) {
                         w ++;
                     } else {
                         key_info_0[VK_RETURN] = 1;
+                    }
+                    break;
+
+                case '\t':
+                    // 制表
+                    if (input_mode == STRING_INPUT) {
+                        *w = '\t';
+                        w ++;
+                    } else {
+                        key_info_0[VK_TAB] = 1;
                     }
                     break;
 
@@ -285,6 +297,9 @@ void print_debug(const char *text, const int length, const char ln) {
 void set_input_mode(const char mode) {
     if (mode >= CONTROL_INPUT && mode <= STRING_INPUT) {
         input_mode = mode;
+        if (mode == CONTROL_INPUT) {
+            clear_buffer(&input_buffer);
+        }
     } else {
         input_mode = CONTROL_INPUT;
     }
@@ -315,6 +330,13 @@ void set_cursor_coord(const short x, const short y) {
     SetConsoleCursorPosition(handle_1, coord);
 }
 
+void fix_cursor_coord() {
+    GetConsoleScreenBufferInfo(current_handle, &screen_info);
+    cursor_coord = screen_info.dwCursorPosition;
+    SetConsoleCursorPosition(handle_0, screen_info.dwCursorPosition);
+    SetConsoleCursorPosition(handle_1, screen_info.dwCursorPosition);
+}
+
 void hide_cursor() {
     GetConsoleCursorInfo(handle_0, &cursor_info);
     cursor_info.bVisible = FALSE;
@@ -335,7 +357,7 @@ void show_cursor() {
     SetConsoleCursorInfo(handle_1, &cursor_info);
 }
 
-void add_component(const Component *c) {
+void add_component(Component *c) {
     if (vector_capacity == 0) {
         vector_capacity = INITIAL_CAPACITY;
         components = malloc(sizeof(Component *) * vector_capacity);
@@ -343,7 +365,7 @@ void add_component(const Component *c) {
 
     if (c != NULL && get_component_index(c) == -1) {
         if (vector_size == vector_capacity) {
-            const Component **new_components = malloc(sizeof(Component *) * (vector_capacity << 1));
+            Component **new_components = malloc(sizeof(Component *) * (vector_capacity << 1));
             for (int i = 0; i < vector_capacity; i++) {
                 new_components[i] = components[i];
             }
@@ -356,8 +378,91 @@ void add_component(const Component *c) {
 }
 
 void set_focused_component(Component *c) {
-    if (c != NULL) {
+    if (c != NULL && c -> mode & CORE_UI_FOCUSABLE) {
         focused_component = c;
+    }
+}
+
+// 若可能，传出焦点
+void throw_focus(const Component *c) {
+    if (c != NULL && focused_component == c) {
+        for (int i = 0, j = (get_component_index(c) + 1) % vector_size; i < vector_size - 1; i ++, j = (j + 1) % vector_size) {
+            if (components[j] -> mode & CORE_UI_FOCUSABLE) {
+                set_focused_component((Component *) components[j]);
+                break;
+            }
+        }
+    }
+}
+
+// 获取某点处的组件
+static Component *get_component_form_point(const short x, const short y, const short half_width, const short half_height) {
+    for (int i = 0; i < vector_size; i ++) {
+        const COORD coord = components[i] -> coord;
+        const short w = components[i] -> width;
+        const short h = components[i] -> height;
+        if (x + half_width >= coord.X && x - half_width <= coord.X + w && y + half_height >= coord.Y && y - half_height <= coord.Y + h) {
+            return components[i];
+        }
+    }
+    return NULL;
+}
+
+// 从某点向某个方向尝试移出焦点
+static void move_focus_from_point(const short x, const short y, const int direction) {
+    switch (direction) {
+        case CORE_UI_EAST: {
+            for (int i = x + 1, j = 0; i < window_width; i ++, j ++) {
+                Component *c = get_component_form_point((short) i, y, 0, (short) j);
+                if (c != NULL) {
+                    set_focused_component(c);
+                    return;
+                }
+            }
+        }
+        case CORE_UI_NORTH: {
+            for (int i = y - 1, j = 0; i > 0; i --, j ++) {
+                const Component *c = get_component_form_point(x, (short) i, (short) j, 0);
+                if (c != NULL) {
+                    set_focused_component((Component *) c);
+                    return;
+                }
+            }
+        }
+        case CORE_UI_WEST: {
+            for (int i = x - 1, j = 0; i > 0; i --, j ++) {
+                const Component *c = get_component_form_point((short) i, y, 0, (short) j);
+                if (c != NULL) {
+                    set_focused_component((Component *) c);
+                    return;
+                }
+            }
+        }
+        case CORE_UI_SOUTH: {
+            for (int i = y + 1, j = 0; i < window_height; i ++, j ++) {
+                const Component *c = get_component_form_point(x, (short) i, (short) j, 0);
+                if (c != NULL) {
+                    set_focused_component((Component *) c);
+                    return;
+                }
+            }
+        }
+        default: break;
+    }
+}
+
+// 向某个方向尝试移出焦点
+void move_focus(const Component *c, const int direction) {
+    switch (c -> type) {
+        case CORE_UI_CHOOSE_BOX: {
+            move_focus_from_point(c ->coord.X, c -> coord.Y, direction);
+            break;
+        }
+        case CORE_UI_INPUT_BOX: {
+            move_focus_from_point(c ->coord.X, c -> coord.Y, direction);
+            break;
+        }
+        default: break;
     }
 }
 
@@ -403,8 +508,26 @@ void set_size(Component *c, const int width, const int height) {
 
 void set_box_choose(Component *c, const int index) {
     if (c -> type == CORE_UI_CHOOSE_BOX) {
-        c -> parameters[5] = index;
+        c -> parameters[4] = index;
     }
+}
+
+void set_box_input(Component *c, const char *text) {
+    if (c ->type == CORE_UI_INPUT_BOX) {
+        int i;
+        for (i = 0; i < c -> parameters[1]; i++) {
+            if (text[i] == '\0') {
+                break;
+            }
+            c -> input[i] = text[i];
+        }
+        c -> parameters[0] = i;
+        c -> input[c -> parameters[0]] = '\0';
+    }
+}
+
+void set_call_back(Component *c, void (*callback) (int state)) {
+    c -> call_back = callback;
 }
 
 // 创建标签
@@ -415,7 +538,7 @@ Component create_label(MultilanguageText *text, const short x, const short y, co
     } else {
         w = width;
     }
-    const Component c = {CORE_UI_LABEL, 0, x, y, w, height, color, {0, 0, 0, 0, 0, 0, 0, 0}, 1, text, NULL, NULL};
+    const Component c = {CORE_UI_LABEL, 0, x, y, w, height, color, {0, 0, 0, 0, 0, 0, 0, 0}, 1, text, NULL, NULL, NULL};
     return c;
 }
 
@@ -428,31 +551,39 @@ Component create_choose_box(MultilanguageText *text, const int number, const sho
     } else {
         w = grid_width;
     }
-    const Component c = {CORE_UI_CHOOSE_BOX, CORE_UI_FOCUSABLE, x, y, (short) (w * column), (short) (grid_height * row), color, {column, row, w, grid_height, 0, 0, 0, 0}, number, text, NULL, NULL};
+    const Component c = {CORE_UI_CHOOSE_BOX, CORE_UI_FOCUSABLE, x, y, (short) ((w + 1) * column + 1), (short) ((grid_height + 1) * row + 1), color, {column, row, w, grid_height, 0, 0, 0, 0}, number, text, NULL, NULL, NULL};
     return c;
 }
 
 // 创建时钟
 Component create_clock(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_CLOCK, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL};
+    const Component c = {CORE_UI_CLOCK, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
     return c;
 }
 
 // 创建调试面板
 // 参数列表：当前行数，总行数
 Component create_debug_panel(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL};
+    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
     return c;
 }
 
 // 创建FPS面板
 Component create_fps_panel(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_FPS_PANEL, 0, x, y, 16, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL};
+    const Component c = {CORE_UI_FPS_PANEL, 0, x, y, 16, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
+    return c;
+}
+
+// 创建输入框
+// 参数列表：当前字符数，总字符数
+Component create_input_box(const short x, const short y, const short width, const short height, const int length, const int color) {
+    const Component c = {CORE_UI_INPUT_BOX, CORE_UI_FOCUSABLE, x, y, width, height, color, {0, length, 0, 0, 0, 0, 0, 0}, 0, NULL, malloc(sizeof(char) * (length + 1)), NULL, NULL};
     return c;
 }
 
 void clear_console() {
     WriteConsole(current_handle, CLEAN_UP_CONSOLE, strlen(CLEAN_UP_CONSOLE), NULL, NULL);
+    SetConsoleCursorPosition(current_handle, origin_coord);
 }
 
 // 刷新函数，每帧调用一次
@@ -478,24 +609,70 @@ void refresh_console() {
     }
 
     // 挪回光标（下面可能再挪走光标）
-    SetConsoleCursorPosition(current_handle, origin_coord);
+    SetConsoleCursorPosition(current_handle, cursor_coord);
 
     // 处理特殊组件的逻辑
     if (focused_component != NULL) {
         switch (focused_component -> type) {
             case CORE_UI_CHOOSE_BOX: {
                 // 多选框
+                hide_cursor();
+                set_input_mode(CONTROL_INPUT);
+
                 if (is_key_pressed(VK_DOWN)) {
                     focused_component -> parameters[4] = (focused_component -> parameters[4] + 1) % focused_component -> texts_number;
                 } else if (is_key_pressed(VK_RETURN)) {
                     if (focused_component -> call_back != NULL) {
                         focused_component -> call_back(focused_component -> parameters[4]);
                     }
+                } else if (is_key_pressed(VK_TAB)) {
+                    throw_focus(focused_component);
                 }
                 break;
             }
-            default: break;
+
+            case CORE_UI_INPUT_BOX: {
+                // 输入框
+                show_cursor();
+                set_input_mode(LINE_INPUT);
+
+                read_buffer(&input_buffer, input_box_text_buffer, MAX_INPUT_TEXT_LENGTH, 1);
+                for (int i = 0; i < MAX_INPUT_TEXT_LENGTH;) {
+                    if (input_box_text_buffer[i] == '\0') {
+                        break;
+                    }
+                    const UnicodeCharacter u = get_next_utf_8(input_box_text_buffer + i);
+                    if (focused_component -> parameters[1] - focused_component -> parameters[0] >= u.length) {
+                        for (int j = 0; j < u.length;j ++) {
+                            focused_component -> input[focused_component -> parameters[0] ++] = input_box_text_buffer[i ++];
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                focused_component -> input[focused_component -> parameters[0]] = '\0';
+
+                if (is_key_pressed(VK_DELETE)) {
+                    if (focused_component -> parameters[0] > 0) {
+                        const UnicodeCharacter u = get_last_utf_8(focused_component -> input + focused_component -> parameters[0] - 1);
+                        focused_component -> parameters[0] -= u.length;
+                        focused_component -> input[focused_component -> parameters[0]] = '\0';
+                    }
+                } else if (is_key_pressed(VK_RETURN) || is_key_pressed(VK_TAB)) {
+                    throw_focus(focused_component);
+                }
+
+                break;
+            }
+
+            default:
+                hide_cursor();
+                set_input_mode(CONTROL_INPUT);
+                break;
         }
+    } else {
+        hide_cursor();
+        set_input_mode(CONTROL_INPUT);
     }
 
     SetConsoleCursorPosition(handle_0, cursor_coord);
@@ -526,7 +703,11 @@ void refresh_fps() {
     } else {
         frame_count ++;
     }
-    sprintf(fps_string, "FPS : %d", fps);
+    if (get_language() == zh_CN_4711) {
+        sprintf(fps_string, "帧率 : %d", fps);
+    } else {
+        sprintf(fps_string, "FPS : %d", fps);
+    }
 }
 
 void refresh_window_info() {
@@ -547,7 +728,7 @@ void refresh_input() {
     }
 }
 
-void draw_component(const Component *c) {
+void draw_component(Component *c) {
     if (c != NULL) {
         const COORD coord = c -> coord;
         const short x = coord.X;
@@ -567,11 +748,41 @@ void draw_component(const Component *c) {
                 break;
             }
             case CORE_UI_CHOOSE_BOX: {
-                for (int i = 0, column = 0, row = 0; i < c -> texts_number; i++) {
+                const int tn = c -> texts_number;
+                const int cn = c -> parameters[0];
+                const int rn = c -> parameters[1];
+                const int pn = cn * rn;                                                 // 一页上的总选项数
+                const int cw = c -> parameters[2];
+                const int rh = c -> parameters[3];
+
+                // 更新当前索引、当前页数、总页数
+                c -> parameters[6] = (tn - tn % pn) / pn + 1;
+                if (c -> parameters[5] < 0) {
+                    c -> parameters[5] = 0;
+                } if (c -> parameters[5] > c -> parameters[6] - 1) {
+                    c -> parameters[5] = c -> parameters[6] - 1;
+                }
+                const int p = (c -> parameters[4] - c -> parameters[4] % pn) / pn;
+                const int index_begin = c -> parameters[5] * pn;                        // 左上角的索引
+                if (p != c -> parameters[5]) {
+                    c -> parameters[4] = index_begin;
+                }
+                int index_end = index_begin + pn;
+                if (index_end > tn) {
+                    index_end = tn;
+                }
+
+                for (int i = index_begin, column = 0, row = 0; i < index_end; i++) {
                     if (i == c -> parameters[4]) {
-                        draw_multilanguage_text(c -> texts[i], (short) (x + column * c -> parameters[2]), (short) (y + row * c -> parameters[3]), (short) c -> parameters[2], (short) c -> parameters[3], c -> color, NULL);
+                        if (c == focused_component) {
+                            draw_text("•", (short) (x + column * (cw + 1)), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, c -> color, NULL);
+                            draw_multilanguage_text(c -> texts[i], (short) (x + column * (cw + 1) + 1), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, c -> color, NULL);
+                        } else {
+                            draw_text("•", (short) (x + column * (cw + 1)), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, FOREGROUND_COLOR, NULL);
+                            draw_multilanguage_text(c -> texts[i], (short) (x + column * (cw + 1) + 1), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, FOREGROUND_COLOR, NULL);
+                        }
                     } else {
-                        draw_multilanguage_text(c -> texts[i], (short) (x + column * c -> parameters[2]), (short) (y + row * c -> parameters[3]), (short) c -> parameters[2], (short) c -> parameters[3], FOREGROUND_COLOR, NULL);
+                        draw_multilanguage_text(c -> texts[i], (short) (x + column * (cw + 1) + 1), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, DISABLED_COLOR, NULL);
                     }
                     column ++;
                     if (column == c -> parameters[0]) {
@@ -593,6 +804,17 @@ void draw_component(const Component *c) {
             }
             case CORE_UI_FPS_PANEL: {
                 draw_text(fps_string, x, y, w, h, c -> color, NULL);
+                break;
+            }
+            case CORE_UI_INPUT_BOX: {
+                if (focused_component == c) {
+                    draw_text("█", x, y, w, h, c -> color, NULL);
+                    draw_text(c -> input, x, y, w, h, c -> color, NULL);
+                    fix_cursor_coord();
+                } else {
+                    draw_text("_", x, y, w, h, DISABLED_COLOR, NULL);
+                    draw_text(c -> input, x, y, w, h, DISABLED_COLOR, NULL);
+                }
                 break;
             }
             default:

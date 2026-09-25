@@ -9,7 +9,7 @@
 #define en_US_4711                      1
 #define zh_CN_4711                      2
 
-#define LANGUAGE_PROFILE_PATH           "language.prof"
+#define LANGUAGE_PROFILE_PATH           "C:\\ProgramData\\system_4711\\language.prof"
 
 typedef struct MultilanguageText {
     char *en_US;
