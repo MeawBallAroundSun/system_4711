@@ -65,6 +65,7 @@ int input_command(const char *command) {
     return DB_ERROR;
 }
 
+// 选中物品到结账区
 int command_pick(const char *key_word, const char *number) {
     const int index = command_search(key_word);
     if (index == -1) {
@@ -102,10 +103,20 @@ int command_pick(const char *key_word, const char *number) {
     return DB_FINE;
 }
 
+// 结账
 int command_checkout() {
+    if (ruv_size > 0) {
+        const time_t t = time(NULL);
+        const struct tm *lt = localtime(&t);
+        init_records(lt);
 
+        Record *record = malloc(sizeof(Record));
+        record -> year = lt -> tm_year + 1900;
+    }
+    return DB_ERROR;
 }
 
+// 查找物品，返回索引，错误则返回-1
 int command_search(const char *key_word) {
     int key_id;
     if (sscanf(key_word, "%d", &key_id) == 1) { // NOLINT(*-err34-c)
@@ -350,7 +361,7 @@ Item *get_item(const int index) {
 
 
 // 导入某天的记录
-int init_records(const struct tm time) {
+int init_records(const struct tm *time) {
     // 释放内存
     for (int i = 0; i < rv_size; i++) {
         for (int j = 0; j < rv[i] -> length; j++) {
@@ -363,7 +374,7 @@ int init_records(const struct tm time) {
 
 
     char path[256];
-    sprintf(path, "%s%d_%d_%d.txt", DB_RECORD_PATH, time.tm_year + 1900, time.tm_mon + 1, time.tm_mday);
+    sprintf(path, "%s%d_%d_%d.txt", DB_RECORD_PATH, time -> tm_year + 1900, time -> tm_mon + 1, time -> tm_mday);
     FILE *file = fopen(path, "r");
 
     if (file == NULL) {

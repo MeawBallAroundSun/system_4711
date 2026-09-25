@@ -17,8 +17,8 @@
 #define CORE_UI_FPS_PANEL           5
 #define CORE_UI_INPUT_BOX           6
 
-#define CORE_UI_CONSOLE_WIDTH       256
-#define CORE_UI_CONSOLE_HEIGHT      144
+#define CORE_UI_CONSOLE_WIDTH       1024
+#define CORE_UI_CONSOLE_HEIGHT      576
 #define CORE_UI_MINIMAL_TEXT_WIDTH  8
 
 #define CONTROL_INPUT               0               // 英文输入转按键
@@ -36,6 +36,7 @@
 
 #define CLEAN_UP_CONSOLE            "\033[2J"
 #define DEFAULT_COLOR_ANSI          "\033[0m"
+#define SELECTED_COLOR_ANSI         "\033[38;2;176;64;160m"
 #define FOREGROUND_COLOR            0xFFFFFF
 #define SELECTED_COLOR              0xB040A0
 #define DISABLED_COLOR              0x808080

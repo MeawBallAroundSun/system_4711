@@ -10,30 +10,30 @@
 
 
 int main(void) {
-//     // 初始化控制台
-//     init_console();
-//
-//     // 初始化所有要用到的组件
-//     init_components();
-//
-//     // 初始化文件
-//     init_folders();
-//
-//
-//     const int language_profile = load_language_profile();
-//     enter_welcome_page(language_profile);
-//     if (language_profile != 0) {
-//         set_language(language_profile);
-//     }
-//
-//
-//     while (1) {
-//         refresh_console();
-//     }
-//
-//
-//     return 0;
-//
+     // 初始化控制台
+     init_console();
+
+     // 初始化所有要用到的组件
+     init_components();
+
+     // 初始化文件
+     init_folders();
+
+
+     const int language_profile = load_language_profile();
+     enter_welcome_page(language_profile);
+     if (language_profile != 0) {
+         set_language(language_profile);
+     }
+
+
+     while (1) {
+         refresh_console();
+     }
+
+
+     return 0;
+
 }
 
 

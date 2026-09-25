@@ -84,7 +84,7 @@ int get_item_number();
 Item *get_item(int index);
 
 
-int init_records(struct tm time);
+int init_records(const struct tm *time);
 void add_record(Record *record);
 void save_record(struct tm time);
 int get_record_number();

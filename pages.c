@@ -6,7 +6,7 @@
 #include "assets.h"
 
 Component debug_panel;
-Component clock;
+Component clock_panel;
 Component fps_panel;
 
 
@@ -26,10 +26,10 @@ Component create_administrator_account_box;
 // 创建全部组件
 void init_components() {
     debug_panel = create_debug_panel(0, 0, SELECTED_COLOR);
-    clock = create_clock(0, 0, FOREGROUND_COLOR);
+    clock_panel = create_clock(0, 0, FOREGROUND_COLOR);
     fps_panel = create_fps_panel(0, 0, FOREGROUND_COLOR);
 
-    welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
+    welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER * 3, FOREGROUND_COLOR);
     choose_language_label_0 = create_label(&CHOOSE_LANGUAGE, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
     languages_box = create_choose_box(LANGUAGES, LANGUAGE_NUMBER, 0, 0, LANGUAGE_NUMBER / 2, 2, 16, 1, SELECTED_COLOR);
 
@@ -43,8 +43,8 @@ void init_components() {
 
 // 顶部栏
 static void add_title_bar() {
-    set_location(&clock, 0, 0);
-    add_component(&clock);
+    set_location(&clock_panel, 0, 0);
+    add_component(&clock_panel);
 
     set_location(&fps_panel, 40, 0);
     add_component(&fps_panel);
@@ -63,10 +63,10 @@ void enter_welcome_page(const int state) {
             set_location(&welcome_label, 0, 4);
             add_component(&welcome_label);
 
-            set_location(&choose_language_label_0, 0, 9);
+            set_location(&choose_language_label_0, 0, 13);
             add_component(&choose_language_label_0);
 
-            set_location(&languages_box, 0, 13);
+            set_location(&languages_box, 0, 17);
             set_box_choose(&languages_box, 0);
             set_call_back(&languages_box, leave_welcome_page_0);
             add_component(&languages_box);

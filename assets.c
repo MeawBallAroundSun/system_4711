@@ -6,8 +6,12 @@
 #include "assets.h"
 
 MultilanguageText WELCOME = {
-    "Welcome to use this supermarket system!",
-    "欢迎使用此超市系统！"
+    "Welcome to use this supermarket system!\n"
+    "Use [Tab] [↑] [↓] [←] [→] to move.\n"
+    "Use [Enter] to select.",
+    "欢迎使用此超市系统！\n"
+    "使用 [Tab] [↑] [↓] [←] [→] 来移动。\n"
+    "使用 [Enter] 来选择。"
 };
 
 MultilanguageText CHOOSE_LANGUAGE = {

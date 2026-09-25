@@ -11,7 +11,7 @@
 #define MAX_PASSWORD_LENGTH                     64
 
 extern Component debug_panel;
-extern Component clock;
+extern Component clock_panel;
 extern Component fps_panel;
 
 extern Component welcome_label;
