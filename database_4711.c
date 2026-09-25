@@ -27,6 +27,9 @@ static int ruv_size = 0;
 static int ruv_capacity = 0;
 static RecordUnit **ruv;
 
+static volatile int sales_sum = 0;
+static int current_account_index = -1;
+
 
 int input_command(const char *command) {
     char buffer_0[1024];
@@ -34,26 +37,56 @@ int input_command(const char *command) {
     char buffer_2[1024];
     char buffer_3[1024];
 
+    int result = DB_ERROR;
     switch (sscanf(command, "%s%s%s%s", buffer_0, buffer_1, buffer_2, buffer_3)) {
         case 1: {
             if (strcmp(buffer_0, "checkout") == 0 || strcmp(buffer_0, "结账") == 0) {
-                command_checkout();
+                result = command_checkout();
+            } else if (strcmp(buffer_0, "clear") == 0 || strcmp(buffer_0, "清空") == 0) {
+                result = command_clear();
+            } else if (strcmp(buffer_0, "sales") == 0 || strcmp(buffer_0, "销售额") == 0) {
+                result = command_sales(NULL, NULL, NULL);
+            } else if (strcmp(buffer_0, "logout") == 0 || strcmp(buffer_0, "登出") == 0) {
+                result = command_logout();
             }
             break;
         }
         case 2: {
             if (strcmp(buffer_0, "search") == 0 || strcmp(buffer_0, "查找") == 0) {
-                command_search(buffer_1);
+                result = command_search(buffer_1) >= 0 ? DB_FINE : DB_ERROR;
+            } else if (strcmp(buffer_0, "pick") == 0 || strcmp(buffer_0, "下单") == 0) {
+                result = command_pick(buffer_1, "1");
+            } else if (strcmp(buffer_0, "sales") == 0 || strcmp(buffer_0, "销售额") == 0) {
+                result = command_sales(NULL, NULL, buffer_1);
+            } else if (strcmp(buffer_0, "delete_item") == 0 || strcmp(buffer_0, "删除商品") == 0) {
+                result = command_delete_item(buffer_1);
             }
             break;
         }
         case 3: {
-            if (strcmp(buffer_0, "pick") == 0 || strcmp(buffer_0, "取货") == 0) {
-                command_pick(buffer_1, buffer_2);
+            if (strcmp(buffer_0, "pick") == 0 || strcmp(buffer_0, "下单") == 0) {
+                result = command_pick(buffer_1, buffer_2);
+            } else if (strcmp(buffer_0, "sales") == 0 || strcmp(buffer_0, "销售额") == 0) {
+                result = command_sales(NULL, buffer_1, buffer_2);
+            } else if (strcmp(buffer_0, "set_price") == 0 || strcmp(buffer_0, "设置售价") == 0) {
+                result = command_set_price(buffer_1, buffer_2);
+            } else if (strcmp(buffer_0, "set_stock") == 0 || strcmp(buffer_0, "设置库存") == 0) {
+                result = command_set_stock(buffer_1, buffer_2);
+            } else if (strcmp(buffer_0, "login") == 0 || strcmp(buffer_0, "登录") == 0) {
+                result = command_login(buffer_1, buffer_2);
+            } else if (strcmp(buffer_0, "create_account") == 0 || strcmp(buffer_0, "创建账户") == 0) {
+                result = command_create_account(buffer_1, buffer_2, NULL);
             }
             break;
         }
         case 4: {
+            if (strcmp(buffer_0, "sales") == 0 || strcmp(buffer_0, "销售额") == 0) {
+                result = command_sales(buffer_1, buffer_2, buffer_3);
+            } else if (strcmp(buffer_0, "add_item") == 0 || strcmp(buffer_0, "添加商品") == 0) {
+                result = command_add_item(buffer_1, buffer_2, buffer_3);
+            } else if (strcmp(buffer_0, "create_account") == 0 || strcmp(buffer_0, "创建账户") == 0) {
+                result = command_create_account(buffer_1, buffer_2, buffer_3);
+            }
             break;
         }
         default: {
@@ -62,7 +95,7 @@ int input_command(const char *command) {
     }
 
 
-    return DB_ERROR;
+    return result;
 }
 
 // 选中物品到结账区
@@ -112,6 +145,33 @@ int command_checkout() {
 
         Record *record = malloc(sizeof(Record));
         record -> year = lt -> tm_year + 1900;
+        record -> month = lt -> tm_mon + 1;
+        record -> day = lt -> tm_mday;
+        record -> hour = lt -> tm_hour;
+        record -> minute = lt -> tm_min;
+        record -> second = lt -> tm_sec;
+        record -> length = ruv_size;
+        record -> units = malloc(sizeof(RecordUnit) * ruv_size);
+        // 深拷贝、库存对应减少
+        for (int i = 0; i < ruv_size; i++) {
+            record -> units[i].id = ruv[i] -> id;
+            record -> units[i].name = malloc(sizeof(char) * (strlen(ruv[i] -> name) + 1));
+            strcpy(record -> units[i].name, ruv[i] -> name);
+            record -> units[i].price = ruv[i] -> price;
+            record -> units[i].number = ruv[i] -> number;
+
+            for (int j = 0; j < iv_size; j++) {
+                if (record -> units[i].id == iv[j] -> id) {
+                    iv[j] -> stock -= record -> units[i].number;
+                    break;
+                }
+            }
+        }
+        add_record(record);
+        delete_all_ru();
+        save_record(lt);
+        save_item();
+        return DB_FINE;
     }
     return DB_ERROR;
 }
@@ -133,6 +193,238 @@ int command_search(const char *key_word) {
         }
     }
     return -1;
+}
+
+// 清空当前选中商品，重新结账
+int command_clear() {
+    delete_all_ru();
+    return DB_FINE;
+}
+
+// 修改价格
+int command_set_price(const char *key_word, const char *price) {
+    const int index = command_search(key_word);
+    if (index == -1) {
+        return DB_ERROR;
+    }
+    double price_double;
+    if (sscanf(price, "%lf", &price_double) != 1) { // NOLINT(*-err34-c)
+        return DB_ERROR;
+    }
+    const int price_int = (int) (price_double * 100.0 + 0.5);
+    if (price_int <= 0) {
+        return DB_ERROR;
+    }
+    iv[index] -> price = price_int;
+    save_item();
+    return DB_FINE;
+}
+
+// 统计某一天的销售额
+int command_sales(const char *year, const char *month, const char *day) {
+    sales_sum = 0;
+
+    const time_t t = time(NULL);
+    const struct tm *lt = localtime(&t);
+
+    int y;
+    if (!(year != NULL && sscanf(year, "%d", &y) == 1)) { // NOLINT(*-err34-c)
+        y = lt->tm_year + 1900;
+    }
+    const int feb = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0 ? 29 : 28;     // 二月天数
+
+    int m;
+    if (!(month != NULL && sscanf(month, "%d", &m) == 1)) { // NOLINT(*-err34-c)
+        m = lt -> tm_mon + 1;
+        if (year != NULL) {
+            m = 1;
+        }
+    }
+    if (m < 1 || m > 12) {
+        return DB_ERROR;
+    }
+
+    int d;
+    if (!(day != NULL && sscanf(day, "%d", &d) == 1)) { // NOLINT(*-err34-c)
+        d = lt -> tm_mday;
+        if (month != NULL) {
+            d = 1;
+        }
+    }
+    if (d < 1 || d > 31) {
+        return DB_ERROR;
+    }
+    if ((m == 4 || m == 6 || m == 9 || m == 11) && d > 30) {
+        return DB_ERROR;
+    }
+    if (m == 2 && d > feb) {
+        return DB_ERROR;
+    }
+
+    struct tm mt = *lt;
+    mt.tm_year = y - 1900;
+    mt.tm_mon = m - 1;
+    mt.tm_mday = d;
+    mktime(&mt);
+
+    init_records(&mt);
+    int sum = 0;
+    for (int i = 0; i < rv_size; i++) {
+        for (int j = 0; j < rv[i] -> length; j++) {
+            sum += rv[i] -> units[j].number * rv[i] -> units[j].price;
+        }
+    }
+    sales_sum = sum;
+    init_records(lt);
+
+    return DB_FINE;
+}
+
+// 设置物品库存
+int command_set_stock(const char *key_word, const char *number) {
+    const int index = command_search(key_word);
+    if (index == -1) {
+        return DB_ERROR;
+    }
+
+    Item *item = iv[index];
+
+    int mode = 0;
+    if (number[0] == '+') {
+        mode = 1;
+        number ++;
+    } else if (number[0] == '-') {
+        mode = -1;
+        number ++;
+    }
+
+    int n;
+    if (sscanf(number, "%d", &n) != 1) { // NOLINT(*-err34-c)
+        return DB_ERROR;
+    }
+
+    if (n < 0) {
+        return DB_ERROR;
+    }
+
+    if (mode == 0) {
+        item -> stock = n;
+    } else if (mode > 0) {
+        item -> stock += n;
+    } else {
+        item -> stock -= n;
+        if (item -> stock < 0) {
+            item -> stock = 0;
+        }
+    }
+    save_item();
+    return DB_FINE;
+}
+
+// 添加新物品
+int command_add_item(const char *id, const char *name, const char *price) {
+    int id_int;
+    if (sscanf(id, "%d", &id_int) != 1) { // NOLINT(*-err34-c)
+        return DB_ERROR;
+    }
+    if (id_int <= 0) {
+        return DB_ERROR;
+    }
+
+    double price_float;
+    if (sscanf(price, "%lf", &price_float) != 1) { // NOLINT(*-err34-c)
+        return DB_ERROR;
+    }
+    const int price_int = (int) (price_float * 100.0 + 0.5);
+    if (price_int <= 0) {
+        return DB_ERROR;
+    }
+
+    // 检测没有重复Item
+    for (int i = 0; i < iv_size; i++) {
+        if (iv[i] -> id == id_int || strcmp(name, iv[i] -> name) == 0) {
+            return DB_ERROR;
+        }
+    }
+
+    Item *item = malloc(sizeof(Item));
+    item -> id = id_int;
+    item -> price = price_int;
+    item -> stock = 0;
+    item -> name = malloc(strlen(name) + 1);
+    strcpy(item -> name, name);
+    add_item(item);
+    save_item();
+    return DB_FINE;
+}
+
+// 删除物品
+int command_delete_item(const char *key_word) {
+    const int index = command_search(key_word);
+    if (index == -1) {
+        return DB_ERROR;
+    }
+    const Item *item = iv[index];
+    delete_item(item);
+    save_item();
+    return DB_FINE;
+}
+
+// 登入
+int command_login(const char *name, const char *password) {
+    for (int i = 0; i < av_size; i++) {
+        if (strcmp(av[i] -> name, name) == 0 && strcmp(av[i] -> password, password) == 0) {
+            current_account_index = i;
+            return DB_FINE;
+        }
+    }
+    return DB_ERROR;
+}
+
+// 登出
+int command_logout() {
+    if (current_account_index == -1) {
+        return DB_ERROR;
+    }
+    current_account_index = -1;
+    return DB_FINE;
+}
+
+// 创建账户
+int command_create_account(const char *name, const char *password, const char *administrator) {
+    if (name == NULL || password == NULL) {
+        return DB_ERROR;
+    }
+    for (int i = 0; i < av_size; i++) {
+        if (strcmp(av[i] -> name, name) == 0) {
+            return DB_ERROR;
+        }
+    }
+    Account *account = malloc(sizeof(Account));
+    account -> name = malloc(strlen(name) + 1);
+    strcpy(account -> name, name);
+    account -> password = malloc(strlen(password) + 1);
+    strcpy(account -> password, password);
+    account -> is_administrator = 0;
+    if (administrator != NULL && (strcmp(administrator, "ad") == 0 || strcmp(administrator, "admin") == 0 || strcmp(administrator, "administrator") == 0 || strcmp(administrator, "管理员") == 0)) {
+        account -> is_administrator = 1;
+    }
+    add_account(account);
+    save_account();
+    return DB_FINE;
+}
+
+// 获取统计后的销售额
+int get_sales() {
+    return sales_sum;
+}
+
+// 获取当前账户
+Account *get_current_account() {
+    if (current_account_index == -1) {
+        return NULL;
+    }
+    return av[current_account_index];
 }
 
 // 初始化数据库
@@ -245,7 +537,7 @@ void save_account() {
         if (av[i] -> is_administrator) {
             fprintf(file, "ad\n");
         } else {
-            fprintf(file, "cr\n");
+            fprintf(file, "ca\n");
         }
     }
     fclose(file);
@@ -436,11 +728,11 @@ void add_record(Record *record) {
         rv = new_rv;
     }
     rv[rv_size ++] = record;
-};
+}
 
-void save_record(const struct tm time) {
+void save_record(const struct tm *time) {
     char path[256];
-    sprintf(path, "%s%d_%d_%d.txt", DB_RECORD_PATH, time.tm_year + 1900, time.tm_mon + 1, time.tm_mday);
+    sprintf(path, "%s%d_%d_%d.txt", DB_RECORD_PATH, time->tm_year + 1900, time->tm_mon + 1, time->tm_mday);
     FILE *file = fopen(path, "w");
 
     if (file == NULL) {
@@ -456,7 +748,7 @@ void save_record(const struct tm time) {
         fprintf(file, "%d\t", rv[i] -> second);
         fprintf(file, "%d\n", rv[i] -> length);
         for (int j = 0; j < rv[i] -> length; j++) {
-            fprintf(file, "%d\t", rv[i] -> units[j].id);
+            fprintf(file, "\t%d\t", rv[i] -> units[j].id);
             fprintf(file, "%s\t", rv[i] -> units[j].name);
             fprintf(file, "%d\t", rv[i] -> units[j].price);
             fprintf(file, "%d\n", rv[i] -> units[j].number);

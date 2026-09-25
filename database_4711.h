@@ -34,13 +34,13 @@ typedef struct Item {
     int id;
     char *name;
     int stock;
-    int price;
+    int price;                      // 价格的计量单位均使用分，即1元的price会记作100。
 } Item;
 
 typedef struct RecordUnit {
     int id;
     char *name;
-    int price;                      // 当时单价
+    int price;                      // 记录时时单价
     int number;
 } RecordUnit;
 
@@ -56,11 +56,25 @@ typedef struct Record {
 } Record;
 
 
+
+
 int input_command(const char *command);
 
 int command_pick(const char *key_word, const char *number);
 int command_checkout();
 int command_search(const char *key_word);
+int command_clear();
+int command_set_price(const char *key_word, const char *price);
+int command_sales(const char *year, const char *month, const char *day);
+int command_set_stock(const char *key_word, const char *number);
+int command_add_item(const char *id, const char *name, const char *price);
+int command_delete_item(const char *key_word);
+int command_login(const char *name, const char *password);
+int command_logout();
+int command_create_account(const char *name, const char *password, const char *administrator);
+
+int get_sales();
+Account *get_current_account();
 
 int init_database();
 
@@ -86,7 +100,7 @@ Item *get_item(int index);
 
 int init_records(const struct tm *time);
 void add_record(Record *record);
-void save_record(struct tm time);
+void save_record(const struct tm *time);
 int get_record_number();
 Record *get_record(int index);
 
