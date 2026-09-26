@@ -22,6 +22,7 @@
 #define CORE_UI_DB_STOCK_PANEL      101
 #define CORE_UI_DB_PRICE_PANEL      102
 #define CORE_UI_DB_VIEW_PANEL       103
+#define CORE_UI_DB_NAME_PANEL       104
 
 #define CORE_UI_CONSOLE_WIDTH       1024
 #define CORE_UI_CONSOLE_HEIGHT      576
@@ -137,6 +138,8 @@ Component create_db_stock_panel(short x, short y, int color);
 Component create_db_price_panel(short x, short y, int color);
 
 Component create_db_view_panel(short x, short y, int color);
+
+Component create_db_name_panel(short x, short y, int color);
 
 void clear_console();
 

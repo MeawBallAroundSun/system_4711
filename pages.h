@@ -24,6 +24,7 @@ extern Component checkout_panel;
 extern Component stock_panel;
 extern Component price_panel;
 extern Component view_panel;
+extern Component name_panel;
 
 
 extern Component welcome_label;

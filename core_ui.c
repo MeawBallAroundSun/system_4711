@@ -696,6 +696,11 @@ Component create_db_view_panel(const short x, const short y, const int color) {
     return c;
 }
 
+Component create_db_name_panel(short x, short y, int color) {
+    const Component c = {CORE_UI_DB_NAME_PANEL, 0, x, y, 128, 128, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
+    return c;
+}
+
 void clear_console() {
     WriteConsole(current_handle, CLEAN_UP_CONSOLE, strlen(CLEAN_UP_CONSOLE), NULL, NULL);
     SetConsoleCursorPosition(current_handle, origin_coord);
@@ -1073,6 +1078,13 @@ void draw_component(Component *c) {
                     draw_text(buffer, x + cw * 2, y + i * 2 + 2, cw, 2, c -> color, NULL);
                     sprintf(buffer, "%d", item -> stock);
                     draw_text(buffer, x + cw * 3, y + i * 2 + 2, cw, 2, c -> color, NULL);
+                }
+                break;
+            }
+            case CORE_UI_DB_NAME_PANEL: {
+                const Account *a = get_current_account();
+                if (a != NULL) {
+                    draw_text(a -> name, x, y, 128, 1, c -> color, NULL);
                 }
                 break;
             }

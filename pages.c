@@ -17,6 +17,7 @@ Component checkout_panel;
 Component stock_panel;
 Component price_panel;
 Component view_panel;
+Component name_panel;
 
 
 Component welcome_label;
@@ -64,6 +65,7 @@ void init_components() {
     stock_panel = create_db_stock_panel(0, 0, FOREGROUND_COLOR);
     price_panel = create_db_price_panel(0, 0, FOREGROUND_COLOR);
     view_panel = create_db_view_panel(0, 0, FOREGROUND_COLOR);
+    name_panel = create_db_name_panel(0, 0, FOREGROUND_COLOR);
 
     welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER * 3, FOREGROUND_COLOR);
     nu_cl_label = create_label(&NU_CL, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
@@ -112,6 +114,9 @@ static void add_title_bar() {
 
     set_location(&fps_panel, 40, 0);
     add_component(&fps_panel);
+
+    set_location(&name_panel, 60, 0);
+    add_component(&name_panel);
 }
 
 // 程序入口
