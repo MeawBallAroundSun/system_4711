@@ -107,6 +107,11 @@ int command_pick(const char *key_word, const char *number) {
 
     const Item *item = iv[index];
 
+    if (number == NULL) {
+        add_ru(item, 1, 1);
+        return DB_FINE;
+    }
+
     int mode = 1;
     if (number[0] == '+') {
         mode = 1;
@@ -535,8 +540,8 @@ void save_account() {
     }
 
     for (int i = 0; i < av_size; i++) {
-        fprintf(file, "%s\t", av[i] -> name);
-        fprintf(file, "%s\t", av[i] -> password);
+        fprintf(file, "%s\t\t\t\t", av[i] -> name);
+        fprintf(file, "%s\t\t\t\t", av[i] -> password);
         if (av[i] -> is_administrator) {
             fprintf(file, "ad\n");
         } else {
@@ -632,9 +637,9 @@ void save_item() {
     }
 
     for (int i = 0; i < iv_size; i++) {
-        fprintf(file, "%d\t", iv[i] -> id);
-        fprintf(file, "%s\t", iv[i] -> name);
-        fprintf(file, "%d\t", iv[i] -> stock);
+        fprintf(file, "%d\t\t\t\t", iv[i] -> id);
+        fprintf(file, "%s\t\t\t\t", iv[i] -> name);
+        fprintf(file, "%d\t\t\t\t", iv[i] -> stock);
         fprintf(file, "%d\n", iv[i] -> price);
     }
     fclose(file);
@@ -743,17 +748,17 @@ void save_record(const struct tm *time) {
     }
 
     for (int i = 0; i < rv_size; i++) {
-        fprintf(file, "%d\t", rv[i] -> year);
-        fprintf(file, "%d\t", rv[i] -> month);
-        fprintf(file, "%d\t", rv[i] -> day);
-        fprintf(file, "%d\t", rv[i] -> hour);
-        fprintf(file, "%d\t", rv[i] -> minute);
-        fprintf(file, "%d\t", rv[i] -> second);
+        fprintf(file, "%d\t\t\t\t", rv[i] -> year);
+        fprintf(file, "%d\t\t\t\t", rv[i] -> month);
+        fprintf(file, "%d\t\t\t\t", rv[i] -> day);
+        fprintf(file, "%d\t\t\t\t", rv[i] -> hour);
+        fprintf(file, "%d\t\t\t\t", rv[i] -> minute);
+        fprintf(file, "%d\t\t\t\t", rv[i] -> second);
         fprintf(file, "%d\n", rv[i] -> length);
         for (int j = 0; j < rv[i] -> length; j++) {
-            fprintf(file, "\t%d\t", rv[i] -> units[j].id);
-            fprintf(file, "%s\t", rv[i] -> units[j].name);
-            fprintf(file, "%d\t", rv[i] -> units[j].price);
+            fprintf(file, "\t%d\t\t\t\t", rv[i] -> units[j].id);
+            fprintf(file, "%s\t\t\t\t", rv[i] -> units[j].name);
+            fprintf(file, "%d\t\t\t\t", rv[i] -> units[j].price);
             fprintf(file, "%d\n", rv[i] -> units[j].number);
         }
     }

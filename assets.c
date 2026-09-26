@@ -26,12 +26,10 @@ MultilanguageText OU_CL = {
 
 MultilanguageText LANGUAGES[LANGUAGE_NUMBER] = {
     {
-        "English",
-        "English"
+        "English", "English"
     },
     {
-        "中文",
-        "中文"
+        "中文", "中文"
     }
 };
 
@@ -64,6 +62,16 @@ MultilanguageText INPUT_PASSWORD = {
     "密码："
 };
 
+MultilanguageText INPUT_ITEM = {
+    "Item (ID or Name) :",
+    "商品（ID或名称）："
+};
+
+MultilanguageText INPUT_NUMBER = {
+    "Number:",
+    "数量："
+};
+
 MultilanguageText CREATE_ACCOUNT_ERROR = {
     "The input format is incorrect, or the username has already been taken.",
     "输入格式有误，或此用户名已存在"
@@ -72,6 +80,16 @@ MultilanguageText CREATE_ACCOUNT_ERROR = {
 MultilanguageText LOGIN_ERROR = {
     "Username or password is incorrect.",
     "用户名或密码错误。"
+};
+
+MultilanguageText CASHIER_ERROR = {
+    "Can't find the item, or the number is incorrect.",
+    "找不到对应商品，或数量有误。"
+};
+
+MultilanguageText CHECKOUT_ERROR = {
+    "No selected items.",
+    "当前无已选商品。"
 };
 
 MultilanguageText LOGIN_BOX[1] = {
@@ -86,7 +104,7 @@ MultilanguageText AD_HOME_BOX[AD_HOME_OPTION_NUM] = {
         "Cashier","收银"
     },
     {
-        "View Item", "查看商品"
+        "View Items", "查看商品"
     },
     {
         "Set Language", "设置语言"
@@ -105,5 +123,62 @@ MultilanguageText AD_HOME_BOX[AD_HOME_OPTION_NUM] = {
     },
     {
         "Quit", "关闭程序"
+    }
+};
+
+MultilanguageText CASHIER_BOX[4] = {
+    {
+        "Pick", "下单"
+    },
+    {
+        "Checkout", "结账"
+    },
+    {
+        "Clear", "清空"
+    },
+    {
+        "Back", "返回"
+    }
+};
+
+MultilanguageText CHECKOUT_PANEL_TITLE[4] = {
+    {
+        "ID", "编号"
+    },
+    {
+        "Name", "名称"
+    },
+    {
+        "Price", "价格"
+    },
+    {
+        "Number", "数量"
+    }
+};
+
+MultilanguageText STOCK_PANEL_TITLE[3] = {
+    {
+        "ID", "编号"
+    },
+    {
+    "Name", "名称"
+    },
+    {
+    "Stock", "库存"
+    }
+};
+
+MultilanguageText STOCK_BOX[4] = {
+    {
+        "View", "查看"
+    },
+    {
+    "Set", "设置"
+    },
+    {
+    "Back", "返回"
+    },
+    {
+    "No selected items.","无选中商品。"
     }
 };

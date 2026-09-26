@@ -14,6 +14,8 @@
 int main(void) {
     enter_4711();
 
+    command_add_item("10001", "苹果", "3.00");
+
      while (!is_system_closed) {
          refresh_console();
      }

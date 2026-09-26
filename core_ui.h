@@ -18,6 +18,9 @@
 #define CORE_UI_INPUT_BOX           6
 #define CORE_UI_NOTICE_PANEL        7
 
+#define CORE_UI_DB_CHECKOUT_PANEL   100
+#define CORE_UI_DB_STOCK_PANEL      101
+
 #define CORE_UI_CONSOLE_WIDTH       1024
 #define CORE_UI_CONSOLE_HEIGHT      576
 #define CORE_UI_MINIMAL_TEXT_WIDTH  8
@@ -122,6 +125,10 @@ Component create_fps_panel(short x, short y, int color);
 Component create_input_box(short x, short y, short width, short height, int length, int color);
 
 Component create_notice_panel(short x, short y, int color);
+
+Component create_db_checkout_panel(short x, short y, int color);
+
+Component create_db_stock_panel(short x, short y, int color);
 
 void clear_console();
 

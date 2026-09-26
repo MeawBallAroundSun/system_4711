@@ -13,6 +13,7 @@ Component debug_panel;
 Component clock_panel;
 Component fps_panel;
 Component notice_panel;
+Component checkout_panel;
 
 
 Component welcome_label;
@@ -25,12 +26,20 @@ Component input_name_label;
 Component input_name_box;
 Component input_password_label;
 Component input_password_box;
+Component input_item_label;
+Component input_item_box;
+Component input_number_label;
+Component input_number_box;
+
 Component create_administrator_account_box;
 
 Component login_box;
 
 Component ad_home_box;
 
+Component cashier_box;
+
+Component stock_box;
 
 
 // 创建全部组件
@@ -39,6 +48,7 @@ void init_components() {
     clock_panel = create_clock(0, 0, FOREGROUND_COLOR);
     fps_panel = create_fps_panel(0, 0, FOREGROUND_COLOR);
     notice_panel = create_notice_panel(0, 0, SELECTED_COLOR);
+    checkout_panel = create_db_checkout_panel(0, 0, SELECTED_COLOR);
 
     welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER * 3, FOREGROUND_COLOR);
     nu_cl_label = create_label(&NU_CL, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
@@ -50,11 +60,20 @@ void init_components() {
     input_name_box = create_input_box(0, 0, MAX_NAME_LENGTH, 2, MAX_NAME_LENGTH, FOREGROUND_COLOR);
     input_password_label = create_label(&INPUT_PASSWORD, 0, 0, 16, 1, FOREGROUND_COLOR);
     input_password_box = create_input_box(0, 0, MAX_PASSWORD_LENGTH, 2, MAX_PASSWORD_LENGTH, FOREGROUND_COLOR);
+    input_item_label = create_label(&INPUT_ITEM, 0, 0, 20, 1, FOREGROUND_COLOR);
+    input_item_box = create_input_box(0, 0, MAX_ITEM_LENGTH / 4, 4, MAX_ITEM_LENGTH, FOREGROUND_COLOR);
+    input_number_label = create_label(&INPUT_NUMBER, 0, 0, 20, 1, FOREGROUND_COLOR);
+    input_number_box = create_input_box(0, 0, MAX_NUMBER_LENGTH, 2, MAX_NUMBER_LENGTH, FOREGROUND_COLOR);
+
     create_administrator_account_box = create_choose_box(CREATE_ADMINISTRATOR_ACCOUNT_BOX, 1, 0, 0, 1, 1, 128, 1, SELECTED_COLOR);
 
     login_box = create_choose_box(LOGIN_BOX, 1, 0, 0, 1, 1, 128, 1, SELECTED_COLOR);
 
     ad_home_box = create_choose_box(AD_HOME_BOX, AD_HOME_OPTION_NUM, 0, 0, 4, 4, 24, 3, SELECTED_COLOR);
+
+    cashier_box = create_choose_box(CASHIER_BOX, 4, 0, 0, 2, 2, 16, 1, SELECTED_COLOR);
+
+    stock_box = create_choose_box(STOCK_BOX, 3, 0, 0, 2, 2, 16, 1, SELECTED_COLOR);
 }
 
 
@@ -166,10 +185,11 @@ void enter_nu_ca_wel() {
 // 离开新用户创建管理员欢迎界面
 void leave_nu_ca_wel(int state) {
     if (command_create_account(input_name_box.input, input_password_box.input, "admin") == DB_ERROR) {
+        clear_notice();
         print_notice(CREATE_ACCOUNT_ERROR, 1);
     } else {
         command_login(input_name_box.input, input_password_box.input);
-        enter_ad_home();
+        enter_home();
     }
 }
 
@@ -193,7 +213,6 @@ void enter_ou_cl_wel(void) {
     add_component(&languages_box);
     set_focused_component(&languages_box);
 }
-
 // 离开老用户选择语言欢迎界面
 void leave_ou_cl_wel(const int state) {
     set_language(state + 1);
@@ -239,14 +258,29 @@ void enter_ou_wel(void) {
 // 离开老用户欢迎（登录）界面
 void leave_ou_wel(int state) {
     if (command_login(input_name_box.input, input_password_box.input) == DB_ERROR) {
+        clear_notice();
         print_notice(LOGIN_ERROR, 1);
     } else {
+        enter_home();
+    }
+}
+
+
+
+
+
+// 进入主界面
+void enter_home() {
+    const Account *account = get_current_account();
+    if (account -> is_administrator) {
         enter_ad_home();
     }
 }
 
+
+
 // 进入管理员主界面
-void enter_ad_home(void) {
+void enter_ad_home() {
     remove_all_components();
 
     add_title_bar();
@@ -261,8 +295,174 @@ void enter_ad_home(void) {
 // 退出管理员主界面
 void leave_ad_home(const int state) {
     switch (state) {
-        case 0:
+        case 0: {
+            enter_cashier();
+            break;
+        }
+        case 2: {
+            enter_cl();
+            break;
+        }
+        case 3: {
+            enter_stock();
+        }
+        case 6: {
+            command_logout();
+            enter_ou_wel();
+            break;
+        }
+        case 7: {
+            is_system_closed = 1;
+            break;
+        }
+    }
+}
 
+
+
+// 进入收银界面
+void enter_cashier() {
+    remove_all_components();
+
+    add_title_bar();
+
+    set_location(&input_item_label, 0, 4);
+    add_component(&input_item_label);
+
+    set_location(&input_item_box, 0, 5);
+    set_box_input(&input_item_box, "");
+    add_component(&input_item_box);
+
+    set_location(&input_number_label, 0, 10);
+    add_component(&input_number_label);
+
+    set_location(&input_number_box, 0, 11);
+    set_box_input(&input_number_box, "");
+    add_component(&input_number_box);
+
+    set_location(&cashier_box, 0, 16);
+    set_box_choose(&cashier_box, 0);
+    set_call_back(&cashier_box, leave_cashier);
+    add_component(&cashier_box);
+
+    set_location(&notice_panel, 0, 22);
+    clear_notice();
+    add_component(&notice_panel);
+
+    set_location(&checkout_panel, 48, 4);
+    add_component(&checkout_panel);
+
+    set_focused_component(&input_item_box);
+}
+// 退出收银界面
+void leave_cashier(const int state) {
+    switch (state) {
+        case 0: {
+            clear_notice();
+            const char *number = NULL;
+            if (strlen(input_number_box.input) > 0) {
+                number = input_number_box.input;
+            }
+            if (command_pick(input_item_box.input, number) == DB_ERROR) {
+                print_notice(CASHIER_ERROR, 1);
+            }
+            set_box_input(&input_item_box, "");
+            set_box_input(&input_number_box, "");
+            break;
+        }
+        case 1: {
+            clear_notice();
+            if (command_checkout() == DB_ERROR) {
+                print_notice(CHECKOUT_ERROR, 1);
+            }
+            break;
+        }
+        case 2: {
+            clear_notice();
+            command_clear();
+            break;
+        }
+        case 3:
+        default: {
+            enter_home();
+            break;
+        }
+    }
+}
+
+
+
+
+
+// 进入语言选择界面
+void enter_cl() {
+    remove_all_components();
+
+    add_title_bar();
+
+    set_location(&languages_box, 0, 4);
+    set_box_choose(&languages_box, get_language() - 1);
+    set_call_back(&languages_box, leave_cl);
+    add_component(&languages_box);
+
+    set_focused_component(&languages_box);
+}
+// 退出语言选择界面
+void leave_cl(const int state) {
+    set_language(state + 1);
+    enter_home();
+}
+
+
+
+
+
+
+
+// 进入库存设置界面
+void enter_stock() {
+    remove_all_components();
+
+    add_title_bar();
+
+    set_location(&input_item_label, 0, 4);
+    add_component(&input_item_label);
+
+    set_location(&input_item_box, 0, 5);
+    set_box_input(&input_item_box, "");
+    add_component(&input_item_box);
+
+    set_location(&input_number_label, 0, 10);
+    add_component(&input_number_label);
+
+    set_location(&input_number_box, 0, 11);
+    set_box_input(&input_number_box, "");
+    add_component(&input_number_box);
+
+    set_location(&stock_box, 0, 16);
+    set_box_input(&stock_box, "");
+    set_call_back(&stock_box, leave_stock);
+    add_component(&stock_box);
+
+    set_location(&notice_panel, 0, 22);
+    clear_notice();
+    add_component(&notice_panel);
+
+    set_focused_component(&input_item_box);
+}
+// 退出库存设置界面
+void leave_stock(const int state) {
+    switch (state) {
+        case 0: {
+            clear_notice();
+            const int index = command_search(input_item_box.input);
+            break;
+        }
+        case 2:
+        default: {
+            enter_home();
+            break;
+        }
     }
 }
 

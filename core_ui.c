@@ -8,7 +8,10 @@
 #include <time.h>
 #include <process.h>
 
+#include "database_4711.h"
 #include "core_ui.h"
+
+#include "assets.h"
 #include "core_char.h"
 #include "core_buffer.h"
 
@@ -661,6 +664,20 @@ Component create_notice_panel(const short x, const short y, const int color) {
     return c;
 }
 
+// 创建结账面板
+// 参数列表：当前行数，总行数
+Component create_db_checkout_panel(const short x, const short y, const int color) {
+    const Component c = {CORE_UI_DB_CHECKOUT_PANEL, 0, x, y, 72, 128, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
+    return c;
+}
+
+// 创建库存面板
+// 参数列表：当前商品索引
+Component create_db_stock_panel(const short x, const short y, const int color) {
+    const Component c = {CORE_UI_DB_STOCK_PANEL, 0, x, y, 72, 128, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
+    return c;
+}
+
 void clear_console() {
     WriteConsole(current_handle, CLEAN_UP_CONSOLE, strlen(CLEAN_UP_CONSOLE), NULL, NULL);
     SetConsoleCursorPosition(current_handle, origin_coord);
@@ -953,6 +970,33 @@ void draw_component(Component *c) {
                 int skip = c -> parameters[0];
                 draw_text(notice_text, x, y, w, h, c -> color, &skip);
                 break;
+            }
+            case CORE_UI_DB_CHECKOUT_PANEL: {
+                const int cw = w / 4;
+                draw_multilanguage_text(CHECKOUT_PANEL_TITLE[0], x, y, cw, 1, c -> color, NULL);
+                draw_multilanguage_text(CHECKOUT_PANEL_TITLE[1], x + cw, y, cw, 1, c -> color, NULL);
+                draw_multilanguage_text(CHECKOUT_PANEL_TITLE[2], x + cw * 2, y, cw, 1, c -> color, NULL);
+                draw_multilanguage_text(CHECKOUT_PANEL_TITLE[3], x + cw * 3, y, cw, 1, c -> color, NULL);
+                for (int i = 0;i < get_ru_number(); i ++) {
+                    const RecordUnit *ru = get_ru(i);
+                    char buffer[16];
+                    sprintf(buffer, "%d", ru -> id);
+                    draw_text(buffer, x, y + i * 2 + 2, cw, 2, c -> color, NULL);
+                    draw_text(ru -> name, x + cw, y + i * 2 + 2, cw, 2, c -> color, NULL);
+                    sprintf(buffer, "%.2f", ru -> price / 100.0);
+                    draw_text(buffer, x + cw * 2, y + i * 2 + 2, cw, 2, c -> color, NULL);
+                    sprintf(buffer, "%d", ru -> number);
+                    draw_text(buffer, x + cw * 3, y + i * 2 + 2, cw, 2, c -> color, NULL);
+                }
+                break;
+            }
+            case CORE_UI_DB_STOCK_PANEL: {
+                const int cw = w / 3;
+                draw_multilanguage_text(STOCK_PANEL_TITLE[0], x, y, cw, 1, c -> color, NULL);
+                draw_multilanguage_text(STOCK_PANEL_TITLE[1], x + cw, y, cw, 1, c -> color, NULL);
+                draw_multilanguage_text(STOCK_PANEL_TITLE[2], x + cw * 2, y, cw, 1, c -> color, NULL);
+                const int index = c -> parameters[0];
+                if (index == 0) {}
             }
             default:
             case CORE_UI_UNKNOWN: {
