@@ -11,6 +11,8 @@
 #define MAX_PASSWORD_LENGTH                     32
 #define MAX_ITEM_LENGTH                         128
 #define MAX_NUMBER_LENGTH                       32
+#define MAX_PRICE_LENGTH                        32
+#define MAX_COMMAND_LENGTH                      4096
 
 extern char is_system_closed;
 
@@ -38,6 +40,9 @@ extern Component input_item_box;
 extern Component input_number_label;
 extern Component input_number_box;
 extern Component input_price_label;
+extern Component input_price_box;
+extern Component input_command_label;
+extern Component input_command_box;
 
 extern Component create_administrator_account_box;
 
@@ -51,6 +56,8 @@ extern Component stock_box;
 
 
 void init_components();
+
+void debug_output(const char *text);
 
 void enter_4711();
 
@@ -82,5 +89,8 @@ void leave_stock(int state);
 
 void enter_price();
 void leave_price(int state);
+
+void enter_command();
+void leave_command(int state);
 
 #endif //SYSTEM_4711_PAGES_H

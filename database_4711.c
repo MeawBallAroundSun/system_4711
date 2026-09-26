@@ -30,6 +30,10 @@ static RecordUnit **ruv;
 static volatile int sales_sum = 0;
 static int current_account_index = -1;
 
+// output
+static void (* op) (const char *);
+
+
 
 int input_command(const char *command) {
     char buffer_0[1024];
@@ -420,6 +424,13 @@ int command_create_account(const char *name, const char *password, const char *a
     add_account(account);
     save_account();
     return DB_FINE;
+}
+
+
+
+// 设置输出
+void set_command_output(void(*output)(const char *)) {
+    op = output;
 }
 
 // 获取统计后的销售额

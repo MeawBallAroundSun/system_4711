@@ -74,7 +74,12 @@ MultilanguageText INPUT_NUMBER = {
 
 MultilanguageText INPUT_PRICE = {
     "Price:",
-    "数量："
+    "价格："
+};
+
+MultilanguageText INPUT_COMMAND = {
+    "Please enter the command:",
+    "请键入指令："
 };
 
 MultilanguageText CREATE_ACCOUNT_ERROR = {

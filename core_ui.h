@@ -151,6 +151,8 @@ int draw_multilanguage_text(MultilanguageText text, short x, short y, short widt
 
 int draw_text(const char *text, short x, short y, short width, short height, int color, int *skip);
 
+int count_total_lines(const char *text, const short width);
+
 int get_line_length(const char *text, short width);
 
 COORD get_next_word_length_and_width(const char *text);

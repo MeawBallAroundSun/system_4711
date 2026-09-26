@@ -33,6 +33,9 @@ Component input_item_box;
 Component input_number_label;
 Component input_number_box;
 Component input_price_label;
+Component input_price_box;
+Component input_command_label;
+Component input_command_box;
 
 Component create_administrator_account_box;
 
@@ -58,7 +61,7 @@ void init_components() {
     welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER * 3, FOREGROUND_COLOR);
     nu_cl_label = create_label(&NU_CL, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
     ou_cl_label = create_label(&OU_CL, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
-    languages_box = create_choose_box(LANGUAGES, LANGUAGE_NUMBER, 0, 0, LANGUAGE_NUMBER / 2, 2, 16, 1, SELECTED_COLOR);
+    languages_box = create_choose_box(LANGUAGES, LANGUAGE_NUMBER, 0, 0, LANGUAGE_NUMBER / 2, 2, 128, 1, SELECTED_COLOR);
 
     nu_ca_label = create_label(&CREATE_ADMINISTRATOR_ACCOUNT, 0, 0, CORE_UI_CONSOLE_WIDTH, 5, FOREGROUND_COLOR);
     input_name_label = create_label(&INPUT_NAME, 0, 0, 16, 1, FOREGROUND_COLOR);
@@ -70,10 +73,11 @@ void init_components() {
     input_number_label = create_label(&INPUT_NUMBER, 0, 0, 20, 1, FOREGROUND_COLOR);
     input_number_box = create_input_box(0, 0, MAX_NUMBER_LENGTH, 2, MAX_NUMBER_LENGTH, FOREGROUND_COLOR);
     input_price_label = create_label(&INPUT_PRICE, 0, 0, 20, 1, FOREGROUND_COLOR);
+    input_price_box = create_input_box(0, 0, MAX_PRICE_LENGTH, 2, MAX_PRICE_LENGTH, FOREGROUND_COLOR);
 
-    create_administrator_account_box = create_choose_box(CREATE_ADMINISTRATOR_ACCOUNT_BOX, 1, 0, 0, 1, 1, 128, 1, SELECTED_COLOR);
+    create_administrator_account_box = create_choose_box(CREATE_ADMINISTRATOR_ACCOUNT_BOX, 1, 0, 0, 1, 1, 32, 1, SELECTED_COLOR);
 
-    login_box = create_choose_box(LOGIN_BOX, 1, 0, 0, 1, 1, 128, 1, SELECTED_COLOR);
+    login_box = create_choose_box(LOGIN_BOX, 1, 0, 0, 1, 1, 64, 1, SELECTED_COLOR);
 
     ad_home_box = create_choose_box(AD_HOME_BOX, AD_HOME_OPTION_NUM, 0, 0, 4, 4, 24, 3, SELECTED_COLOR);
 
@@ -82,6 +86,9 @@ void init_components() {
     stock_box = create_choose_box(STOCK_BOX, 3, 0, 0, 2, 2, 16, 1, SELECTED_COLOR);
 }
 
+void debug_output(const char *text) {
+    print_debug(text, strlen(text), 1);
+}
 
 
 // 顶部栏
@@ -101,8 +108,9 @@ void enter_4711() {
     // 初始化所有要用到的组件
     init_components();
 
-    // 初始化数据库
+    // 初始化数据库并设置debug输出
     init_database();
+    set_command_output(&debug_output);
 
     // 获取语言文件
     const int language_profile = load_language_profile();
@@ -524,9 +532,9 @@ void enter_price() {
     set_location(&input_price_label, 0, 10);
     add_component(&input_price_label);
 
-    set_location(&input_number_box, 0, 11);
-    set_box_input(&input_number_box, "");
-    add_component(&input_number_box);
+    set_location(&input_price_box, 0, 11);
+    set_box_input(&input_price_box, "");
+    add_component(&input_price_box);
 
     set_location(&stock_box, 0, 16);
     set_box_input(&stock_box, "");
@@ -564,10 +572,10 @@ void leave_price(const int state) {
                 set_box_input(&input_item_box, "");
             }
             price_panel.parameters[0] = index;
-            if (command_set_price(input_item_box.input, input_number_box.input) == DB_ERROR) {
+            if (command_set_price(input_item_box.input, input_price_box.input) == DB_ERROR) {
                 print_notice(STOCK_ERROR[1], 1);
             }
-            set_box_input(&input_number_box, "");
+            set_box_input(&input_price_box, "");
             break;
         }
         case 2:
@@ -576,6 +584,31 @@ void leave_price(const int state) {
             break;
         }
     }
+}
+
+
+
+
+
+
+
+
+
+
+// 进入指令页面
+void enter_command() {
+    remove_all_components();
+
+    add_title_bar();
+
+    set_location(&debug_panel, 0, 4);
+    debug_panel.parameters[0] = debug_panel.parameters[1];
+    add_component(&debug_panel);
+
+}
+// 退出指令页面
+void leave_command(const int state) {
+    switch (state) {}
 }
 
 

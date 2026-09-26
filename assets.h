@@ -26,6 +26,7 @@ extern MultilanguageText INPUT_PASSWORD;
 extern MultilanguageText INPUT_ITEM;
 extern MultilanguageText INPUT_NUMBER;
 extern MultilanguageText INPUT_PRICE;
+extern MultilanguageText INPUT_COMMAND;
 
 extern MultilanguageText CREATE_ACCOUNT_ERROR;
 extern MultilanguageText LOGIN_ERROR;

@@ -57,7 +57,6 @@ typedef struct Record {
 
 
 
-
 int input_command(const char *command);
 
 int command_pick(const char *key_word, const char *number);
@@ -72,6 +71,8 @@ int command_delete_item(const char *key_word);
 int command_login(const char *name, const char *password);
 int command_logout();
 int command_create_account(const char *name, const char *password, const char *administrator);
+
+void set_command_output(void (* output) (const char *));
 
 int get_sales();
 Account *get_current_account();

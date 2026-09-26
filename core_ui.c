@@ -640,7 +640,7 @@ Component create_clock(const short x, const short y, const int color) {
 // 创建调试面板
 // 参数列表：当前行数，总行数
 Component create_debug_panel(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 128, 2, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
+    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 128, 16, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
     return c;
 }
 
@@ -953,6 +953,13 @@ void draw_component(Component *c) {
             }
             case CORE_UI_DEBUG_PANEL: {
                 read_buffer(&debug_buffer, debug_text, MAX_DEBUG_TEXT_LENGTH, 0);
+                c -> parameters[1] = count_total_lines(debug_text, w);
+                if (c -> parameters[0] > c -> parameters[1] - h) {
+                    c -> parameters[0] = c -> parameters[1] - h;
+                }
+                if (c -> parameters[0] < 0) {
+                    c -> parameters[0] = 0;
+                }
                 int skip = c -> parameters[0];
                 draw_text(debug_text, x, y, w, h, c -> color, &skip);
                 break;
@@ -1124,6 +1131,27 @@ int draw_text(const char *text, const short x, const short y, const short width,
         }
     }
     return output_height;
+}
+
+
+
+
+// 计算文本行数
+int count_total_lines(const char *text, const short width) {
+    const char *s = text;
+    int lines = 0;
+    while (s[0]) {
+        if (s[0] == '\n' || s[0] == '\r') {
+            s++;
+            lines++;
+        } else if (s[0] == '\t' || s[0] == ' ') {
+            s++;
+        } else {
+            s += get_line_length(s, width);
+            if (s[0] != '\n' && s[0] != '\r') lines++;
+        }
+    }
+    return lines;
 }
 
 // 计算下一行要输出多少个char，自动处理宽字符和ANSI代码
