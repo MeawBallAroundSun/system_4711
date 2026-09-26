@@ -33,6 +33,8 @@ static int current_account_index = -1;
 // output
 static void (* op) (const char *);
 
+// time
+static const char *(* time_text) (void);
 
 
 int input_command(const char *command) {
@@ -104,6 +106,9 @@ int input_command(const char *command) {
 
 // 选中物品到结账区
 int command_pick(const char *key_word, const char *number) {
+    op("");
+    op(time_text());
+
     const int index = command_search(key_word);
     if (index == -1) {
         op("Can't find the item.");
@@ -163,6 +168,9 @@ int command_pick(const char *key_word, const char *number) {
 
 // 结账
 int command_checkout() {
+    op("");
+    op(time_text());
+
     if (ruv_size > 0) {
         char buffer[1024];
         sprintf(buffer, "Successfully checkout:");
@@ -217,6 +225,9 @@ int command_checkout() {
 
 // 查找物品，返回索引，错误则返回-1
 int command_search(const char *key_word) {
+    op("");
+    op(time_text());
+
     int key_id;
     if (sscanf(key_word, "%d", &key_id) == 1) { // NOLINT(*-err34-c)
         for (int i = 0; i < iv_size; i++) {
@@ -290,7 +301,11 @@ int command_set_price(const char *key_word, const char *price) {
 
 // 统计某一天的销售额
 int command_sales(const char *year, const char *month, const char *day) {
+    op("");
+    op(time_text());
+
     sales_sum = 0;
+
 
     const time_t t = time(NULL);
     const struct tm *lt = localtime(&t);
@@ -365,6 +380,9 @@ int command_sales(const char *year, const char *month, const char *day) {
 
 // 设置物品库存
 int command_set_stock(const char *key_word, const char *number) {
+    op("");
+    op(time_text());
+
     const int index = command_search(key_word);
     if (index == -1) {
         return DB_ERROR;
@@ -384,7 +402,7 @@ int command_set_stock(const char *key_word, const char *number) {
     int n;
     if (sscanf(number, "%d", &n) != 1) { // NOLINT(*-err34-c)
         char buffer[1024];
-        sprintf(buffer, "\" %s \" is not a number.", number);
+        sprintf(buffer, "\" %s \" is not a number.",  number);
         op(buffer);
         return DB_ERROR;
     }
@@ -418,6 +436,9 @@ int command_set_stock(const char *key_word, const char *number) {
 
 // 添加新物品
 int command_add_item(const char *id, const char *name, const char *price) {
+    op("");
+    op(time_text());
+
     int id_int;
     if (sscanf(id, "%d", &id_int) != 1) { // NOLINT(*-err34-c)
         char buffer[1024];
@@ -450,6 +471,9 @@ int command_add_item(const char *id, const char *name, const char *price) {
     // 检测没有重复Item
     for (int i = 0; i < iv_size; i++) {
         if (iv[i] -> id == id_int || strcmp(name, iv[i] -> name) == 0) {
+            char buffer[1024];
+            sprintf(buffer, "The name \" %s \" exists.", name);
+            op(buffer);
             return DB_ERROR;
         }
     }
@@ -462,16 +486,27 @@ int command_add_item(const char *id, const char *name, const char *price) {
     strcpy(item -> name, name);
     add_item(item);
     save_item();
+
+    char buffer[1024];
+    sprintf(buffer, "Successfully add new item [ %d ] %s.", id_int, name);
+    op(buffer);
+
     return DB_FINE;
 }
 
 // 删除物品
 int command_delete_item(const char *key_word) {
+    op("");
+    op(time_text());
+
     const int index = command_search(key_word);
     if (index == -1) {
         return DB_ERROR;
     }
     const Item *item = iv[index];
+    char buffer[1024];
+    sprintf(buffer, "Successfully delete item [ %d ] %s.", item -> id, item -> name);
+    op(buffer);
     delete_item(item);
     save_item();
     return DB_FINE;
@@ -479,34 +514,67 @@ int command_delete_item(const char *key_word) {
 
 // 登入
 int command_login(const char *name, const char *password) {
+    op("");
+    op(time_text());
+
     for (int i = 0; i < av_size; i++) {
         if (strcmp(av[i] -> name, name) == 0 && strcmp(av[i] -> password, password) == 0) {
             current_account_index = i;
+            char buffer[1024];
+            sprintf(buffer, "Welcome %s login the system!", name);
+            op(buffer);
             return DB_FINE;
         }
     }
+    op("Login failed.");
     return DB_ERROR;
 }
 
 // 登出
 int command_logout() {
+    op("");
+    op(time_text());
+
     if (current_account_index == -1) {
         return DB_ERROR;
     }
+    char buffer[1024];
+    sprintf(buffer, "User %s logout.", av[current_account_index] -> name);
+    op(buffer);
     current_account_index = -1;
     return DB_FINE;
 }
 
 // 创建账户
 int command_create_account(const char *name, const char *password, const char *administrator) {
-    if (name == NULL || password == NULL) {
+    op("");
+    op(time_text());
+
+    if (name == NULL) {
+        op("Missing name.");
         return DB_ERROR;
     }
-    if (strlen(name) < 6 || strlen(password) < 6) {
+    if (password == NULL) {
+        op("Missing password.");
+        return DB_ERROR;
+    }
+    if (strlen(name) < 6) {
+        char buffer[1024];
+        sprintf(buffer, "The name \" %s \" is less than 6 characters.", name);
+        op(buffer);
+        return DB_ERROR;
+    }
+    if (strlen(password) < 6) {
+        char buffer[1024];
+        sprintf(buffer, "The password \" %s \" is less than 6 characters.", password);
+        op(buffer);
         return DB_ERROR;
     }
     for (int i = 0; i < av_size; i++) {
         if (strcmp(av[i] -> name, name) == 0) {
+            char buffer[1024];
+            sprintf(buffer, "The name \" %s \" exists.", av[i] -> name);
+            op(buffer);
             return DB_ERROR;
         }
     }
@@ -521,6 +589,10 @@ int command_create_account(const char *name, const char *password, const char *a
     }
     add_account(account);
     save_account();
+
+    char buffer[1024];
+    sprintf(buffer, "Successfully add new account \" %s \".", account -> name);
+    op(buffer);
     return DB_FINE;
 }
 
@@ -529,6 +601,10 @@ int command_create_account(const char *name, const char *password, const char *a
 // 设置输出
 void set_command_output(void(*output)(const char *)) {
     op = output;
+}
+
+void set_command_time(const char *(*time_f)()) {
+    time_text = time_f;
 }
 
 // 获取统计后的销售额

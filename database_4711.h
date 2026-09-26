@@ -73,6 +73,7 @@ int command_logout();
 int command_create_account(const char *name, const char *password, const char *administrator);
 
 void set_command_output(void (* output) (const char *));
+void set_command_time(const char *(* time_f) (void));
 
 int get_sales();
 Account *get_current_account();

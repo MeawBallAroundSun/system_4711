@@ -119,6 +119,7 @@ void enter_4711() {
     // 初始化数据库并设置debug输出
     init_database();
     set_command_output(&debug_output);
+    set_command_time(&get_time);
 
     // 获取语言文件
     const int language_profile = load_language_profile();

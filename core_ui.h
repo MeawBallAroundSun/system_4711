@@ -65,6 +65,8 @@ void init_console();
 
 void exit_console();
 
+const char *get_time();
+
 void clear_debug();
 
 void print_debug(const char *text, int length, char ln);

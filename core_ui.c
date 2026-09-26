@@ -287,6 +287,10 @@ void exit_console() {
     // 其他的交给C运行时自动释放
 }
 
+const char * get_time() {
+    return time_string;
+}
+
 // 清空调试区
 void clear_debug() {
     clear_buffer(&debug_buffer);
