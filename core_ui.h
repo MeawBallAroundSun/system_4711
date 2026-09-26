@@ -16,6 +16,7 @@
 #define CORE_UI_DEBUG_PANEL         4
 #define CORE_UI_FPS_PANEL           5
 #define CORE_UI_INPUT_BOX           6
+#define CORE_UI_NOTICE_PANEL        7
 
 #define CORE_UI_CONSOLE_WIDTH       1024
 #define CORE_UI_CONSOLE_HEIGHT      576
@@ -115,6 +116,8 @@ Component create_debug_panel(short x, short y, int color);
 Component create_fps_panel(short x, short y, int color);
 
 Component create_input_box(short x, short y, short width, short height, int length, int color);
+
+Component create_notice_panel(short x, short y, int color);
 
 void clear_console();
 

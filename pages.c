@@ -4,6 +4,7 @@
 
 #include "pages.h"
 #include "assets.h"
+#include "database_4711.h"
 
 Component debug_panel;
 Component clock_panel;
@@ -38,8 +39,10 @@ void init_components() {
     input_name_box = create_input_box(0, 0, MAX_NAME_LENGTH, 2, MAX_NAME_LENGTH, FOREGROUND_COLOR);
     input_password_label = create_label(&INPUT_PASSWORD, 0, 0, 16, 1, FOREGROUND_COLOR);
     input_password_box = create_input_box(0, 0, MAX_PASSWORD_LENGTH, 2, MAX_PASSWORD_LENGTH, FOREGROUND_COLOR);
-    create_administrator_account_box = create_choose_box(CREATE_ADMINISTRATOR_ACCOUNT_BOX, 1, 0, 0, 1, 1, 32, 1, SELECTED_COLOR);
+    create_administrator_account_box = create_choose_box(CREATE_ADMINISTRATOR_ACCOUNT_BOX, 1, 0, 0, 1, 1, 128, 1, SELECTED_COLOR);
 }
+
+
 
 // 顶部栏
 static void add_title_bar() {
@@ -50,50 +53,61 @@ static void add_title_bar() {
     add_component(&fps_panel);
 }
 
-// 进入欢迎界面
-void enter_welcome_page(const int state) {
-    remove_all_components();
-    set_focused_component(NULL);
+// 程序入口
+void enter_4711() {
+    // 初始化控制台
+    init_console();
 
-    switch (state) {
-        case 0:
-            // 新用户
-            add_title_bar();
+    // 初始化所有要用到的组件
+    init_components();
 
-            set_location(&welcome_label, 0, 4);
-            add_component(&welcome_label);
+    // 初始化文件
+    const int folder_state = init_folders();
 
-            set_location(&choose_language_label_0, 0, 13);
-            add_component(&choose_language_label_0);
+    // 获取语言文件
+    const int language_profile = load_language_profile();
 
-            set_location(&languages_box, 0, 17);
-            set_box_choose(&languages_box, 0);
-            set_call_back(&languages_box, leave_welcome_page_0);
-            add_component(&languages_box);
+    if (folder_state & DB_ERR_ACCOUNT && language_profile == 0) {
+        if (language_profile == 0) {
+            enter_nu_cl_wel();
+        } else {
 
-            set_focused_component(&languages_box);
-
-            break;
-        case 1:
-        case 2:
-            // 老用户
-            add_title_bar();
-
-
-            break;
-        default: break;
+        }
     }
 }
 
-// 离开欢迎界面（新用户）
-void leave_welcome_page_0(const int state) {
+
+
+
+
+// 进入新用户选择语言欢迎界面
+void enter_nu_cl_wel() {
+    remove_all_components();
+    set_focused_component(NULL);
+    add_title_bar();
+
+    set_location(&welcome_label, 0, 4);
+    add_component(&welcome_label);
+
+    set_location(&choose_language_label_0, 0, 13);
+    add_component(&choose_language_label_0);
+
+    set_location(&languages_box, 0, 17);
+    set_box_choose(&languages_box, 0);
+    set_call_back(&languages_box, leave_nu_cl_wel);
+    add_component(&languages_box);
+    set_focused_component(&languages_box);
+}
+
+// 离开新用户选择语言欢迎界面
+void leave_nu_cl_wel(const int state) {
     set_language(state + 1);
-    enter_create_administrator_account_page(state);
+    enter_nu_ca_wel();
 }
 
 
-// 进入创建管理员界面
-void enter_create_administrator_account_page(const int state) {
+// 进入新用户创建管理员界面
+void enter_nu_ca_wel() {
     remove_all_components();
     set_focused_component(NULL);
 
@@ -118,8 +132,22 @@ void enter_create_administrator_account_page(const int state) {
 
     set_location(&create_administrator_account_box, 0, 15);
     set_box_choose(&create_administrator_account_box, 0);
+    set_call_back(&create_administrator_account_box, leave_nu_ca_wel);
     add_component(&create_administrator_account_box);
 
     set_focused_component(&input_name_box);
+
+}
+
+void leave_nu_ca_wel(int state) {
+    if (command_create_account(input_name_box.input, input_password_box.input, "admin") == DB_ERROR) {
+
+    } else {
+        command_login(input_name_box.input, input_password_box.input);
+        enter_ad_home();
+    }
+}
+
+void enter_ad_home(void) {
 
 }

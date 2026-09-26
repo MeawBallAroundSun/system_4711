@@ -27,9 +27,14 @@ extern Component create_administrator_account_box;
 
 void init_components();
 
-void enter_welcome_page(int state);
-void leave_welcome_page_0(int state);
-void enter_create_administrator_account_page(int state);
-void enter_create_crasher_account_page(int state);
+void enter_4711();
+
+void enter_nu_cl_wel(void);
+void leave_nu_cl_wel(int state);
+
+void enter_nu_ca_wel(void);
+void leave_nu_ca_wel(int state);
+
+void enter_ad_home(void);
 
 #endif //SYSTEM_4711_PAGES_H

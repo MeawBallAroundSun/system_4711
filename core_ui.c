@@ -13,11 +13,12 @@
 #include "core_buffer.h"
 
 
-#define INITIAL_CAPACITY                16
+#define INITIAL_CAPACITY                    16
 
 
-#define MAX_DEBUG_TEXT_LENGTH         4096
-#define MAX_INPUT_TEXT_LENGTH         4096
+#define MAX_DEBUG_TEXT_LENGTH               4096
+#define MAX_INPUT_TEXT_LENGTH               4096
+#define MAX_NOTICE_TEXT_LENGTH              4096
 
 // 组件的vector变长数组
 static int vector_size = 0;
@@ -47,6 +48,10 @@ static Buffer input_buffer;
 static char input_text[MAX_INPUT_TEXT_LENGTH];
 static char input_mode;
 static char input_box_text_buffer[MAX_INPUT_TEXT_LENGTH];
+
+// 通知文本缓冲区
+static Buffer notice_buffer;
+static char notice_text[MAX_NOTICE_TEXT_LENGTH];
 
 // 输入线程相关
 static HANDLE input_handle;
@@ -250,6 +255,7 @@ void init_console() {
     // 初始化缓冲区
     create_buffer(&debug_buffer, CORE_BUFFER_RING, MAX_DEBUG_TEXT_LENGTH);
     create_buffer(&input_buffer, CORE_BUFFER_RING, MAX_INPUT_TEXT_LENGTH);
+    create_buffer(&notice_buffer, CORE_BUFFER_RING, MAX_NOTICE_TEXT_LENGTH);
 
     // 创建新线程处理输入
     input_handle = GetStdHandle(STD_INPUT_HANDLE);
@@ -272,6 +278,7 @@ void exit_console() {
     // 清理缓冲区
     release_buffer(&debug_buffer);
     release_buffer(&input_buffer);
+    release_buffer(&notice_buffer);
 
     // 其他的交给C运行时自动释放
 }
@@ -396,8 +403,14 @@ void throw_focus(const Component *c) {
 }
 
 // 获取某点处的组件
-static Component *get_component_form_point(const short x, const short y, const short half_width, const short half_height) {
+static Component *get_component_form_point(const short x, const short y, const short half_width, const short half_height, const Component *exclude) {
     for (int i = 0; i < vector_size; i ++) {
+        if (components[i] == exclude) {
+            continue;
+        }
+        if (!(components[i] -> mode & CORE_UI_FOCUSABLE)) {
+            continue;
+        }
         const COORD coord = components[i] -> coord;
         const short w = components[i] -> width;
         const short h = components[i] -> height;
@@ -409,43 +422,47 @@ static Component *get_component_form_point(const short x, const short y, const s
 }
 
 // 从某点向某个方向尝试移出焦点
-static void move_focus_from_point(const short x, const short y, const int direction) {
+static void move_focus_from_point(const short x, const short y, const int direction, const Component *exclude) {
     switch (direction) {
         case CORE_UI_EAST: {
-            for (int i = x + 1, j = 0; i < window_width; i ++, j ++) {
-                Component *c = get_component_form_point((short) i, y, 0, (short) j);
+            for (int i = x + 1, j = 0; i < window_width; i ++, j = j > 128 ? 128 : j + 1) {
+                Component *c = get_component_form_point((short) i, y, 0, (short) j, exclude);
                 if (c != NULL) {
                     set_focused_component(c);
                     return;
                 }
             }
+            break;
         }
         case CORE_UI_NORTH: {
-            for (int i = y - 1, j = 0; i > 0; i --, j ++) {
-                const Component *c = get_component_form_point(x, (short) i, (short) j, 0);
+            for (int i = y - 1, j = 0; i >= 0; i --, j = j > 128 ? 128 : j + 1) {
+                const Component *c = get_component_form_point(x, (short) i, (short) j, 0, exclude);
                 if (c != NULL) {
                     set_focused_component((Component *) c);
                     return;
                 }
             }
+            break;
         }
         case CORE_UI_WEST: {
-            for (int i = x - 1, j = 0; i > 0; i --, j ++) {
-                const Component *c = get_component_form_point((short) i, y, 0, (short) j);
+            for (int i = x - 1, j = 0; i >= 0; i --, j = j > 128 ? 128 : j + 1) {
+                const Component *c = get_component_form_point((short) i, y, 0, (short) j, exclude);
                 if (c != NULL) {
                     set_focused_component((Component *) c);
                     return;
                 }
             }
+            break;
         }
         case CORE_UI_SOUTH: {
-            for (int i = y + 1, j = 0; i < window_height; i ++, j ++) {
-                const Component *c = get_component_form_point(x, (short) i, (short) j, 0);
+            for (int i = y + 1, j = 0; i < window_height; i ++, j = j > 128 ? 128 : j + 1) {
+                const Component *c = get_component_form_point(x, (short) i, (short) j, 0, exclude);
                 if (c != NULL) {
                     set_focused_component((Component *) c);
                     return;
                 }
             }
+            break;
         }
         default: break;
     }
@@ -455,11 +472,24 @@ static void move_focus_from_point(const short x, const short y, const int direct
 void move_focus(const Component *c, const int direction) {
     switch (c -> type) {
         case CORE_UI_CHOOSE_BOX: {
-            move_focus_from_point(c ->coord.X, c -> coord.Y, direction);
+            int x = c -> coord.X;
+            int y = c -> coord.Y;
+            const int cn = c -> parameters[0];
+            const int rn = c -> parameters[1];
+            const int tn = cn * rn;
+            const int cw = c -> parameters[2];
+            const int rh = c -> parameters[3];
+            const int index = c -> parameters[4] % tn;
+            const int ci = index % cn;
+            const int ri = index / cn;
+            x += ci * (cw + 1) + (cw + 2) / 2;
+            y += ri * (rh + 1) + (rh + 2) / 2 + 1;
+
+            move_focus_from_point((short) x, (short) y, direction, c);
             break;
         }
         case CORE_UI_INPUT_BOX: {
-            move_focus_from_point(c ->coord.X, c -> coord.Y, direction);
+            move_focus_from_point((short) (c -> coord.X + c -> width / 2), (short) (c -> coord.Y + c -> height / 2), direction, c);
             break;
         }
         default: break;
@@ -564,7 +594,7 @@ Component create_clock(const short x, const short y, const int color) {
 // 创建调试面板
 // 参数列表：当前行数，总行数
 Component create_debug_panel(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 32, 1, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
+    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 64, 2, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
     return c;
 }
 
@@ -578,6 +608,11 @@ Component create_fps_panel(const short x, const short y, const int color) {
 // 参数列表：当前字符数，总字符数
 Component create_input_box(const short x, const short y, const short width, const short height, const int length, const int color) {
     const Component c = {CORE_UI_INPUT_BOX, CORE_UI_FOCUSABLE, x, y, width, height, color, {0, length, 0, 0, 0, 0, 0, 0}, 0, NULL, malloc(sizeof(char) * (length + 1)), NULL, NULL};
+    return c;
+}
+
+Component create_notice_panel(const short x, const short y, const int color) {
+    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 64, 2, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
     return c;
 }
 
@@ -619,8 +654,45 @@ void refresh_console() {
                 hide_cursor();
                 set_input_mode(CONTROL_INPUT);
 
+                const int cn = focused_component -> parameters[0];
+                const int rn = focused_component -> parameters[1];
+                const int tn = cn * rn;
+                const int index = focused_component -> parameters[4] % tn;
+                const int ci = index % cn;
+                const int ri = index / cn;
+
+
+
                 if (is_key_pressed(VK_DOWN)) {
-                    focused_component -> parameters[4] = (focused_component -> parameters[4] + 1) % focused_component -> texts_number;
+                    if (ri < rn - 1) {
+                        focused_component -> parameters[4] += cn;
+                        if (focused_component -> parameters[4] > focused_component -> texts_number - 1) {
+                            focused_component -> parameters[4] = focused_component -> texts_number - 1;
+                        }
+                    } else {
+                        move_focus(focused_component, CORE_UI_SOUTH);
+                    }
+                } else if (is_key_pressed(VK_UP)) {
+                    if (ri > 0) {
+                        focused_component -> parameters[4] -= cn;
+                    } else {
+                        move_focus(focused_component, CORE_UI_NORTH);
+                    }
+                } else if (is_key_pressed(VK_RIGHT)) {
+                    if (ci < cn - 1) {
+                        focused_component -> parameters[4] += 1;
+                        if (focused_component -> parameters[4] > focused_component -> texts_number - 1) {
+                            focused_component -> parameters[4] = focused_component -> texts_number - 1;
+                        }
+                    } else {
+                        move_focus(focused_component, CORE_UI_EAST);
+                    }
+                } else if (is_key_pressed(VK_LEFT)) {
+                    if (ci > 0) {
+                        focused_component -> parameters[4] -= 1;
+                    } else {
+                        move_focus(focused_component, CORE_UI_WEST);
+                    }
                 } else if (is_key_pressed(VK_RETURN)) {
                     if (focused_component -> call_back != NULL) {
                         focused_component -> call_back(focused_component -> parameters[4]);
@@ -652,16 +724,29 @@ void refresh_console() {
                 }
                 focused_component -> input[focused_component -> parameters[0]] = '\0';
 
-                if (is_key_pressed(VK_DELETE)) {
+                if (is_key_pressed(VK_DOWN)) {
+                    move_focus(focused_component, CORE_UI_SOUTH);
+                } else if (is_key_pressed(VK_UP)) {
+                    move_focus(focused_component, CORE_UI_NORTH);
+                } else if (is_key_pressed(VK_RIGHT)) {
+                    move_focus(focused_component, CORE_UI_EAST);
+                } else if (is_key_pressed(VK_LEFT)) {
+                    move_focus(focused_component, CORE_UI_WEST);
+                } else if (is_key_pressed(VK_DELETE)) {
                     if (focused_component -> parameters[0] > 0) {
                         const UnicodeCharacter u = get_last_utf_8(focused_component -> input + focused_component -> parameters[0] - 1);
                         focused_component -> parameters[0] -= u.length;
                         focused_component -> input[focused_component -> parameters[0]] = '\0';
                     }
-                } else if (is_key_pressed(VK_RETURN) || is_key_pressed(VK_TAB)) {
+                } else if (is_key_pressed(VK_RETURN)) {
+                    if (focused_component -> call_back == NULL) {
+                        throw_focus(focused_component);
+                    } else {
+                        focused_component -> call_back(focused_component -> parameters[0]);
+                    }
+                } else if (is_key_pressed(VK_TAB)) {
                     throw_focus(focused_component);
                 }
-
                 break;
             }
 
@@ -756,7 +841,7 @@ void draw_component(Component *c) {
                 const int rh = c -> parameters[3];
 
                 // 更新当前索引、当前页数、总页数
-                c -> parameters[6] = (tn - tn % pn) / pn + 1;
+                c -> parameters[6] = (tn + pn - 1) / pn;
                 if (c -> parameters[5] < 0) {
                     c -> parameters[5] = 0;
                 } if (c -> parameters[5] > c -> parameters[6] - 1) {

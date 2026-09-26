@@ -141,7 +141,26 @@ int get_used_size(Buffer *buffer) {
 static void write_char_to_ring_buffer(RingBuffer *buffer, const char c) {
     const int remaining_size = (buffer -> read_index - buffer -> write_index + buffer -> size - 1) % buffer -> size;
     if (remaining_size == 0) {
-        buffer -> read_index = (buffer -> read_index + 1) % buffer -> size;
+        int utf_8_length = 1;
+        const char first_char = buffer -> buffer[buffer -> read_index];
+        if ((first_char & 0x80) == 0x00) {
+            utf_8_length = 1;
+        } else if ((first_char & 0xE0) == 0xC0) {
+            utf_8_length = 2;
+        } else if ((first_char & 0xF0) == 0xE0) {
+            utf_8_length = 3;
+        } else if ((first_char & 0xF8) == 0xF0) {
+            utf_8_length = 4;
+        } else if ((first_char & 0xFC) == 0xF8) {
+            utf_8_length = 5;
+        } else if ((first_char & 0xFE) == 0xFC) {
+            utf_8_length = 6;
+        }
+
+
+        for (int i = 0; i < utf_8_length; i ++) {
+            buffer -> read_index = (buffer -> read_index + 1) % buffer -> size;
+        }
     }
     buffer -> buffer[buffer -> write_index] = c;
     buffer -> write_index = (buffer -> write_index + 1) % buffer -> size;
