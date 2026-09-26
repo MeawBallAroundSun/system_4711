@@ -65,6 +65,10 @@ void clear_debug();
 
 void print_debug(const char *text, int length, char ln);
 
+void clear_notice();
+
+void print_notice(MultilanguageText text, char ln);
+
 void set_input_mode(char mode);
 
 char is_key_pressed(int key);

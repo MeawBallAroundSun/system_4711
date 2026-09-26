@@ -21,4 +21,6 @@ extern MultilanguageText CREATE_ADMINISTRATOR_ACCOUNT_BOX[1];
 extern MultilanguageText INPUT_NAME;
 extern MultilanguageText INPUT_PASSWORD;
 
+extern MultilanguageText CREATE_ACCOUNT_ERROR;
+
 #endif //SYSTEM_4711_ASSETS_H

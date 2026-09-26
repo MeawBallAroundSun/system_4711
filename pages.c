@@ -9,6 +9,7 @@
 Component debug_panel;
 Component clock_panel;
 Component fps_panel;
+Component notice_panel;
 
 
 Component welcome_label;
@@ -29,6 +30,7 @@ void init_components() {
     debug_panel = create_debug_panel(0, 0, SELECTED_COLOR);
     clock_panel = create_clock(0, 0, FOREGROUND_COLOR);
     fps_panel = create_fps_panel(0, 0, FOREGROUND_COLOR);
+    notice_panel = create_notice_panel(0, 0, SELECTED_COLOR);
 
     welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER * 3, FOREGROUND_COLOR);
     choose_language_label_0 = create_label(&CHOOSE_LANGUAGE, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
@@ -135,13 +137,17 @@ void enter_nu_ca_wel() {
     set_call_back(&create_administrator_account_box, leave_nu_ca_wel);
     add_component(&create_administrator_account_box);
 
+    set_location(&notice_panel, 0, 20);
+    clear_notice();
+    add_component(&notice_panel);
+
     set_focused_component(&input_name_box);
 
 }
 
 void leave_nu_ca_wel(int state) {
     if (command_create_account(input_name_box.input, input_password_box.input, "admin") == DB_ERROR) {
-
+        print_notice(CREATE_ACCOUNT_ERROR, 1);
     } else {
         command_login(input_name_box.input, input_password_box.input);
         enter_ad_home();
@@ -149,5 +155,6 @@ void leave_nu_ca_wel(int state) {
 }
 
 void enter_ad_home(void) {
-
+    remove_all_components();
+    set_focused_component(NULL);
 }

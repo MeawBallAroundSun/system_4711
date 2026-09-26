@@ -290,7 +290,7 @@ void clear_debug() {
 
 // 打印调试字符，所有的debug_panel都会显示其中的内容
 // 当输入过长时，环形缓冲区会自动覆盖旧内容
-// 另外，覆盖之后不保证utf_8字符串不完整部分能正常显示，可能在开头部分出现乱码（比较简陋凑合用）
+// 另外，覆盖之后不保证utf_8字符串不完整部分能正常显示，可能在开头部分出现乱码（比较简陋凑合用）（此问题后来在core_buffer中修复）
 void print_debug(const char *text, const int length, const char ln) {
     write_buffer(&debug_buffer, text, length);
 
@@ -299,6 +299,44 @@ void print_debug(const char *text, const int length, const char ln) {
         write_buffer(&debug_buffer, &c, 1);
     }
 }
+
+// 清空消息区
+void clear_notice() {
+    clear_buffer(&notice_buffer);
+}
+
+// 打印消息
+void print_notice(const MultilanguageText text, const char ln) {
+    switch (get_language()) {
+        case en_US_4711:
+            write_buffer(&notice_buffer, text.en_US, MAX_NOTICE_TEXT_LENGTH);
+            if (ln) {
+                const char c = '\n';
+                write_buffer(&notice_buffer, &c, 1);
+            }
+            break;
+        case zh_CN_4711:
+            write_buffer(&notice_buffer, text.zh_CN, MAX_NOTICE_TEXT_LENGTH);
+            if (ln) {
+                const char c = '\n';
+                write_buffer(&notice_buffer, &c, 1);
+            }
+            break;
+        default:
+            write_buffer(&notice_buffer, text.en_US, MAX_NOTICE_TEXT_LENGTH);
+            if (ln) {
+                const char c = '\n';
+                write_buffer(&notice_buffer, &c, 1);
+            }
+            write_buffer(&notice_buffer, text.zh_CN, MAX_NOTICE_TEXT_LENGTH);
+            if (ln) {
+                const char c = '\n';
+                write_buffer(&notice_buffer, &c, 1);
+            }
+            break;
+    }
+}
+
 
 // 修改输入模式
 void set_input_mode(const char mode) {
@@ -594,7 +632,7 @@ Component create_clock(const short x, const short y, const int color) {
 // 创建调试面板
 // 参数列表：当前行数，总行数
 Component create_debug_panel(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 64, 2, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
+    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 128, 2, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
     return c;
 }
 
@@ -611,8 +649,10 @@ Component create_input_box(const short x, const short y, const short width, cons
     return c;
 }
 
+// 创建消息面板
+// 参数列表：当前行数，总行数
 Component create_notice_panel(const short x, const short y, const int color) {
-    const Component c = {CORE_UI_DEBUG_PANEL, 0, x, y, 64, 2, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
+    const Component c = {CORE_UI_NOTICE_PANEL, 0, x, y, 128, 2, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
     return c;
 }
 
@@ -900,6 +940,12 @@ void draw_component(Component *c) {
                     draw_text("_", x, y, w, h, DISABLED_COLOR, NULL);
                     draw_text(c -> input, x, y, w, h, DISABLED_COLOR, NULL);
                 }
+                break;
+            }
+            case CORE_UI_NOTICE_PANEL: {
+                read_buffer(&notice_buffer, notice_text, MAX_NOTICE_TEXT_LENGTH, 0);
+                int skip = c -> parameters[0];
+                draw_text(notice_text, x, y, w, h, c -> color, &skip);
                 break;
             }
             default:

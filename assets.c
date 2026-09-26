@@ -56,3 +56,8 @@ MultilanguageText INPUT_PASSWORD = {
     "Password:",
     "密码："
 };
+
+MultilanguageText CREATE_ACCOUNT_ERROR = {
+    "The input format is incorrect, or the username has already been taken.",
+    "输入格式有误，或此用户名已存在"
+};
