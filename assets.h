@@ -46,9 +46,12 @@ extern MultilanguageText CASHIER_BOX[4];
 extern MultilanguageText CHECKOUT_PANEL_TITLE[4];
 extern MultilanguageText STOCK_PANEL_TITLE[4];
 extern MultilanguageText PRICE_PANEL_TITLE[4];
+extern MultilanguageText VIEW_PANEL_TITLE[4];
 
 extern MultilanguageText STOCK_BOX[3];
 
 extern MultilanguageText COMMAND_BOX[4];
+
+extern MultilanguageText VIEW_BOX[1];
 
 #endif //SYSTEM_4711_ASSETS_H

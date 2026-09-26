@@ -225,6 +225,21 @@ MultilanguageText PRICE_PANEL_TITLE[4] = {
     }
 };
 
+MultilanguageText VIEW_PANEL_TITLE[4] = {
+    {
+        "ID", "编号"
+    },
+    {
+        "Name", "名称"
+    },
+    {
+        "Price", "价格"
+    },
+    {
+        "Stock", "库存"
+    }
+};
+
 MultilanguageText STOCK_BOX[3] = {
     {
         "View", "查看"
@@ -249,5 +264,11 @@ MultilanguageText COMMAND_BOX[4] ={
     },
     {
         "* Back *", "* 返回 *"
+    }
+};
+
+MultilanguageText VIEW_BOX[1] = {
+    {
+        "Back", "返回"
     }
 };

@@ -23,6 +23,7 @@ extern Component notice_panel;
 extern Component checkout_panel;
 extern Component stock_panel;
 extern Component price_panel;
+extern Component view_panel;
 
 
 extern Component welcome_label;
@@ -56,6 +57,8 @@ extern Component cashier_box;
 extern Component stock_box;
 
 extern Component command_box;
+
+extern Component view_box;
 
 
 void init_components();
@@ -98,5 +101,8 @@ void leave_price(int state);
 
 void enter_command();
 void leave_command(int state);
+
+void enter_view();
+void leave_view(int state);
 
 #endif //SYSTEM_4711_PAGES_H

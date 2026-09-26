@@ -16,6 +16,7 @@ Component notice_panel;
 Component checkout_panel;
 Component stock_panel;
 Component price_panel;
+Component view_panel;
 
 
 Component welcome_label;
@@ -50,6 +51,8 @@ Component stock_box;
 
 Component command_box;
 
+Component view_box;
+
 
 // 创建全部组件
 void init_components() {
@@ -60,6 +63,7 @@ void init_components() {
     checkout_panel = create_db_checkout_panel(0, 0, SELECTED_COLOR);
     stock_panel = create_db_stock_panel(0, 0, FOREGROUND_COLOR);
     price_panel = create_db_price_panel(0, 0, FOREGROUND_COLOR);
+    view_panel = create_db_view_panel(0, 0, FOREGROUND_COLOR);
 
     welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER * 3, FOREGROUND_COLOR);
     nu_cl_label = create_label(&NU_CL, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
@@ -92,6 +96,8 @@ void init_components() {
     stock_box = create_choose_box(STOCK_BOX, 3, 0, 0, 2, 2, 16, 1, SELECTED_COLOR);
 
     command_box = create_choose_box(COMMAND_BOX, 4, 0, 0, 4, 1, 16, 1, SELECTED_COLOR);
+
+    view_box = create_choose_box(VIEW_BOX, 1, 0, 0, 1, 1, 16, 1, SELECTED_COLOR);
 }
 
 void debug_output(const char *text) {
@@ -324,6 +330,10 @@ void leave_ad_home(const int state) {
             enter_cashier();
             break;
         }
+        case 1: {
+            enter_view();
+            break;
+        }
         case 2: {
             enter_cl();
             break;
@@ -377,6 +387,10 @@ void leave_ca_home(const int state) {
     switch (state) {
         case 0: {
             enter_cashier();
+            break;
+        }
+        case 1: {
+            enter_view();
             break;
         }
         case 2: {
@@ -703,6 +717,27 @@ void leave_command(const int state) {
             break;
         }
     }
+}
+
+// 进入查看页面
+void enter_view() {
+    remove_all_components();
+
+    add_title_bar();
+
+    set_location(&view_box, 0, 3);
+    set_box_choose(&view_box, 0);
+    set_call_back(&view_box, leave_view);
+    add_component(&view_box);
+
+    set_location(&view_panel, 0, 6);
+    add_component(&view_panel);
+
+    set_focused_component(&view_box);
+}
+// 退出查看页面
+void leave_view(const int state) {
+    enter_home();
 }
 
 

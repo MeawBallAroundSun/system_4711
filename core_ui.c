@@ -690,6 +690,12 @@ Component create_db_price_panel(const short x, const short y, const int color) {
     return c;
 }
 
+// 创建商品面板
+Component create_db_view_panel(const short x, const short y, const int color) {
+    const Component c = {CORE_UI_DB_VIEW_PANEL, 0, x, y, 128, 128, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
+    return c;
+}
+
 void clear_console() {
     WriteConsole(current_handle, CLEAN_UP_CONSOLE, strlen(CLEAN_UP_CONSOLE), NULL, NULL);
     SetConsoleCursorPosition(current_handle, origin_coord);
@@ -1042,12 +1048,31 @@ void draw_component(Component *c) {
                     draw_multilanguage_text(PRICE_PANEL_TITLE[3], x, y + 2, w, 1, c -> color, NULL);
                 } else {
                     const Item *item = get_item(index);
-                    char buffer[16];
-                    sprintf(buffer, "%d", item -> id);
+                    char buffer[24];
+                    sprintf(buffer, "[ %d ]", item -> id);
                     draw_text(buffer, x, y + 2, cw, 2, c -> color, NULL);
                     draw_text(item -> name, x + cw, y + 2, cw, 2, c -> color, NULL);
                     sprintf(buffer, "%.2f", item -> price / 100.0);
                     draw_text(buffer, x + cw * 2, y + 2, cw, 2, c -> color, NULL);
+                }
+                break;
+            }
+            case CORE_UI_DB_VIEW_PANEL: {
+                const int cw = w / 4;
+                draw_multilanguage_text(VIEW_PANEL_TITLE[0], x, y, cw, 1, c -> color, NULL);
+                draw_multilanguage_text(VIEW_PANEL_TITLE[1], x + cw, y, cw, 1, c -> color, NULL);
+                draw_multilanguage_text(VIEW_PANEL_TITLE[2], x + cw * 2, y, cw, 1, c -> color, NULL);
+                draw_multilanguage_text(VIEW_PANEL_TITLE[3], x + cw * 3, y, cw, 1, c -> color, NULL);
+                for (int i = 0;i < get_item_number(); i ++) {
+                    const Item *item = get_item(i);
+                    char buffer[24];
+                    sprintf(buffer, "[ %d ]", item -> id);
+                    draw_text(buffer, x, y + i * 2 + 2, cw, 2, c -> color, NULL);
+                    draw_text(item -> name, x + cw, y + i * 2 + 2, cw, 2, c -> color, NULL);
+                    sprintf(buffer, "%.2f￥", item -> price / 100.0);
+                    draw_text(buffer, x + cw * 2, y + i * 2 + 2, cw, 2, c -> color, NULL);
+                    sprintf(buffer, "%d", item -> stock);
+                    draw_text(buffer, x + cw * 3, y + i * 2 + 2, cw, 2, c -> color, NULL);
                 }
                 break;
             }
