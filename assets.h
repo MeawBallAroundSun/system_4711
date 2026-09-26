@@ -47,4 +47,6 @@ extern MultilanguageText PRICE_PANEL_TITLE[4];
 
 extern MultilanguageText STOCK_BOX[3];
 
+extern MultilanguageText COMMAND_BOX[4];
+
 #endif //SYSTEM_4711_ASSETS_H

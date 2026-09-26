@@ -47,6 +47,8 @@ Component cashier_box;
 
 Component stock_box;
 
+Component command_box;
+
 
 // 创建全部组件
 void init_components() {
@@ -74,6 +76,8 @@ void init_components() {
     input_number_box = create_input_box(0, 0, MAX_NUMBER_LENGTH, 2, MAX_NUMBER_LENGTH, FOREGROUND_COLOR);
     input_price_label = create_label(&INPUT_PRICE, 0, 0, 20, 1, FOREGROUND_COLOR);
     input_price_box = create_input_box(0, 0, MAX_PRICE_LENGTH, 2, MAX_PRICE_LENGTH, FOREGROUND_COLOR);
+    input_command_label = create_label(&INPUT_COMMAND, 0, 0, 40, 1, FOREGROUND_COLOR);
+    input_command_box = create_input_box(0, 0, 128, 32, MAX_COMMAND_LENGTH, FOREGROUND_COLOR);
 
     create_administrator_account_box = create_choose_box(CREATE_ADMINISTRATOR_ACCOUNT_BOX, 1, 0, 0, 1, 1, 32, 1, SELECTED_COLOR);
 
@@ -84,6 +88,8 @@ void init_components() {
     cashier_box = create_choose_box(CASHIER_BOX, 4, 0, 0, 2, 2, 16, 1, SELECTED_COLOR);
 
     stock_box = create_choose_box(STOCK_BOX, 3, 0, 0, 2, 2, 16, 1, SELECTED_COLOR);
+
+    command_box = create_choose_box(COMMAND_BOX, 4, 0, 0, 4, 1, 16, 1, SELECTED_COLOR);
 }
 
 void debug_output(const char *text) {
@@ -323,6 +329,10 @@ void leave_ad_home(const int state) {
         }
         case 4: {
             enter_price();
+            break;
+        }
+        case 5: {
+            enter_command();
             break;
         }
         case 6: {
@@ -601,14 +611,51 @@ void enter_command() {
 
     add_title_bar();
 
-    set_location(&debug_panel, 0, 4);
+    set_location(&debug_panel, 0, 3);
     debug_panel.parameters[0] = debug_panel.parameters[1];
     add_component(&debug_panel);
 
+    set_location(&command_box, 0, 20);
+    set_box_choose(&command_box, 0);
+    command_box.parameters[7] = 1;
+    set_call_back(&command_box, leave_command);
+    add_component(&command_box);
+
+    set_location(&input_command_label, 0, 24);
+    add_component(&input_command_label);
+
+    set_location(&input_command_box, 0, 25);
+    set_box_input(&input_command_box, "");
+    input_command_box.parameters[2] = 0;
+    set_call_back(&input_command_box, leave_command);
+    add_component(&input_command_box);
+
+    set_focused_component(&input_command_box);
 }
 // 退出指令页面
 void leave_command(const int state) {
-    switch (state) {}
+    switch (state) {
+        case 0: {
+            print_debug(input_command_box.input, strlen(input_command_box.input), 1);
+            input_command(input_command_box.input);
+            set_box_input(&input_command_box, "");
+            debug_panel.parameters[0] = debug_panel.parameters[1];
+            break;
+        }
+        case 1: {
+            debug_panel.parameters[0] --;
+            break;
+        }
+        case 2: {
+            debug_panel.parameters[0] ++;
+            break;
+        }
+        default:
+        case 3: {
+            enter_home();
+            break;
+        }
+    }
 }
 
 

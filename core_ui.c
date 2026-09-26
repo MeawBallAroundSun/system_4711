@@ -19,7 +19,7 @@
 #define INITIAL_CAPACITY                    16
 
 
-#define MAX_DEBUG_TEXT_LENGTH               4096
+#define MAX_DEBUG_TEXT_LENGTH               65536
 #define MAX_INPUT_TEXT_LENGTH               4096
 #define MAX_NOTICE_TEXT_LENGTH              4096
 
@@ -217,7 +217,8 @@ static unsigned __stdcall input_thread_function(void *args) {
         *w = '\0';
         // 将处理后的纯文本流输入存入环形缓冲区
         write_buffer(&input_buffer, input_text, (int) read_count);
-        print_debug(input_text, (int) read_count, 0);
+        // 下面一行供调试用
+        // print_debug(input_text, (int) read_count, 0);
     }
     return 0;
 }
@@ -619,7 +620,7 @@ Component create_label(MultilanguageText *text, const short x, const short y, co
 }
 
 // 创建多选框
-// 参数列表：列数，行数，列宽，行高，当前选中的索引数，当前页数，总页数
+// 参数列表：列数，行数，列宽，行高，当前选中的索引数，当前页数，总页数，装饰
 Component create_choose_box(MultilanguageText *text, const int number, const short x, const short y, const short column, const short row, const short grid_width, const short grid_height, const int color) {
     short w;
     if (grid_width < CORE_UI_MINIMAL_TEXT_WIDTH) {
@@ -651,7 +652,7 @@ Component create_fps_panel(const short x, const short y, const int color) {
 }
 
 // 创建输入框
-// 参数列表：当前字符数，总字符数
+// 参数列表：当前字符数，总字符数，回调参数
 Component create_input_box(const short x, const short y, const short width, const short height, const int length, const int color) {
     const Component c = {CORE_UI_INPUT_BOX, CORE_UI_FOCUSABLE, x, y, width, height, color, {0, length, 0, 0, 0, 0, 0, 0}, 0, NULL, malloc(sizeof(char) * (length + 1)), NULL, NULL};
     return c;
@@ -812,7 +813,7 @@ void refresh_console() {
                     if (focused_component -> call_back == NULL) {
                         throw_focus(focused_component);
                     } else {
-                        focused_component -> call_back(focused_component -> parameters[0]);
+                        focused_component -> call_back(focused_component -> parameters[2]);
                     }
                 } else if (is_key_pressed(VK_TAB)) {
                     throw_focus(focused_component);
@@ -930,10 +931,14 @@ void draw_component(Component *c) {
                 for (int i = index_begin, column = 0, row = 0; i < index_end; i++) {
                     if (i == c -> parameters[4]) {
                         if (c == focused_component) {
-                            draw_text("•", (short) (x + column * (cw + 1)), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, c -> color, NULL);
+                            if (c -> parameters[7] == 0) {
+                                draw_text("•", (short) (x + column * (cw + 1)), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, c -> color, NULL);
+                            }
                             draw_multilanguage_text(c -> texts[i], (short) (x + column * (cw + 1) + 1), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, c -> color, NULL);
                         } else {
-                            draw_text("•", (short) (x + column * (cw + 1)), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, FOREGROUND_COLOR, NULL);
+                            if (c -> parameters[7] == 0) {
+                                draw_text("•", (short) (x + column * (cw + 1)), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, FOREGROUND_COLOR, NULL);
+                            }
                             draw_multilanguage_text(c -> texts[i], (short) (x + column * (cw + 1) + 1), (short) (y + row * (rh + 1) + 1), (short) cw, (short) rh, FOREGROUND_COLOR, NULL);
                         }
                     } else {

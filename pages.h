@@ -54,6 +54,8 @@ extern Component cashier_box;
 
 extern Component stock_box;
 
+extern Component command_box;
+
 
 void init_components();
 

@@ -218,3 +218,18 @@ MultilanguageText STOCK_BOX[3] = {
         "Back", "返回"
     }
 };
+
+MultilanguageText COMMAND_BOX[4] ={
+    {
+        "* Enter *", "* 键入 *"
+    },
+    {
+        "↑  Up  ↑", "↑ 上翻 ↑"
+    },
+    {
+        "↓ Down ↓", "↓ 下翻 ↓"
+    },
+    {
+        "* Back *", "* 返回 *"
+    }
+};
