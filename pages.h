@@ -49,6 +49,7 @@ extern Component create_administrator_account_box;
 extern Component login_box;
 
 extern Component ad_home_box;
+extern Component ca_home_box;
 
 extern Component cashier_box;
 
@@ -79,6 +80,9 @@ void enter_home();
 
 void enter_ad_home();
 void leave_ad_home(int state);
+
+void enter_ca_home();
+void leave_ca_home(int state);
 
 void enter_cashier();
 void leave_cashier(int state);

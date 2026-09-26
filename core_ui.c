@@ -1026,6 +1026,7 @@ void draw_component(Component *c) {
                     sprintf(buffer, "%d", item -> stock);
                     draw_text(buffer, x + cw * 2, y + 2, cw, 2, c -> color, NULL);
                 }
+                break;
             }
             case CORE_UI_DB_PRICE_PANEL: {
                 const int cw = w / 3;
@@ -1044,6 +1045,7 @@ void draw_component(Component *c) {
                     sprintf(buffer, "%.2f", item -> price / 100.0);
                     draw_text(buffer, x + cw * 2, y + 2, cw, 2, c -> color, NULL);
                 }
+                break;
             }
             default:
             case CORE_UI_UNKNOWN: {

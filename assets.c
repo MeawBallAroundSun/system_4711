@@ -147,6 +147,24 @@ MultilanguageText AD_HOME_BOX[AD_HOME_OPTION_NUM] = {
     }
 };
 
+MultilanguageText CA_HOME_BOX[CA_HOME_OPTION_NUM] = {
+    {
+        "Cashier","收银"
+    },
+    {
+        "View Items", "查看商品"
+    },
+    {
+        "Set Language", "设置语言"
+    },
+    {
+        "Log Out", "退出登录"
+    },
+    {
+        "Quit", "关闭程序"
+    }
+};
+
 MultilanguageText CASHIER_BOX[4] = {
     {
         "Pick", "下单"

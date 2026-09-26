@@ -106,6 +106,7 @@ int input_command(const char *command) {
 int command_pick(const char *key_word, const char *number) {
     const int index = command_search(key_word);
     if (index == -1) {
+        op("Can't find the item.");
         return DB_ERROR;
     }
 
@@ -113,6 +114,9 @@ int command_pick(const char *key_word, const char *number) {
 
     if (number == NULL) {
         add_ru(item, 1, 1);
+        char buffer[1024];
+        sprintf(buffer, "Successfully picked 1 [ %d ] %s.", item -> id, item -> name);
+        op(buffer);
         return DB_FINE;
     }
 
@@ -130,24 +134,42 @@ int command_pick(const char *key_word, const char *number) {
 
     int n;
     if (sscanf(number, "%d", &n) != 1) { // NOLINT(*-err34-c)
+        char buffer[1024];
+        sprintf(buffer, "\" %s \" is not a number.", number);
+        op(buffer);
         return DB_ERROR;
     }
 
     if (n < 0) {
+        char buffer[1024];
+        sprintf(buffer, "The number \" %d \" is less than zero.", n);
+        op(buffer);
         return DB_ERROR;
     }
 
     if (item -> stock <= 0 && mode >= 0) {
+        char buffer[1024];
+        sprintf(buffer, "There is no remaining [ %d ] %s.", item -> id, item -> name);
+        op(buffer);
         return DB_ERROR;
     }
 
     add_ru(item, n, mode);
+    char buffer[1024];
+    sprintf(buffer, "Successfully picked %d [ %d ] %s.", n, item -> id, item -> name);
+    op(buffer);
     return DB_FINE;
 }
 
 // 结账
 int command_checkout() {
     if (ruv_size > 0) {
+        char buffer[1024];
+        sprintf(buffer, "Successfully checkout:");
+        op(buffer);
+
+        int sum = 0;
+
         const time_t t = time(NULL);
         const struct tm *lt = localtime(&t);
         init_records(lt);
@@ -169,6 +191,10 @@ int command_checkout() {
             record -> units[i].price = ruv[i] -> price;
             record -> units[i].number = ruv[i] -> number;
 
+            sprintf(buffer, "    [ %d ] %s     %.2f￥ * %d = %.2f￥", record -> units[i].id, record -> units[i].name, record -> units->price / 100.0, record -> units[i].number, record -> units->price * record -> units[i].number / 100.0);
+            op(buffer);
+            sum += record -> units[i].price * record -> units[i].number;
+
             for (int j = 0; j < iv_size; j++) {
                 if (record -> units[i].id == iv[j] -> id) {
                     iv[j] -> stock -= record -> units[i].number;
@@ -180,6 +206,10 @@ int command_checkout() {
         delete_all_ru();
         save_record(lt);
         save_item();
+
+        sprintf(buffer, "Sum to %.2f￥", sum / 100.0);
+        op(buffer);
+
         return DB_FINE;
     }
     return DB_ERROR;
@@ -191,6 +221,11 @@ int command_search(const char *key_word) {
     if (sscanf(key_word, "%d", &key_id) == 1) { // NOLINT(*-err34-c)
         for (int i = 0; i < iv_size; i++) {
             if (key_id != -1 && key_id == iv[i] -> id) {
+                char buffer[1024];
+                sprintf(buffer, "Searching for id [ %d ]:", key_id);
+                op(buffer);
+                sprintf(buffer, "    [ %d ]    %s    price: %.2f￥    stock: %d", key_id, iv[i] -> name, iv[i] -> price / 100.0, iv[i] -> stock);
+                op(buffer);
                 return i;
             }
         }
@@ -198,14 +233,25 @@ int command_search(const char *key_word) {
 
     for (int i = 0; i < iv_size; i++) {
         if (strcmp(key_word, iv[i] -> name) == 0) {
+            char buffer[1024];
+            sprintf(buffer, "Searching for name \" %s \":", key_word);
+            op(buffer);
+            sprintf(buffer, "    [ %d ]    %s    price: %.2f￥    stock: %d", iv[i] -> id, iv[i] -> name, iv[i] -> price / 100.0, iv[i] -> stock);
+            op(buffer);
             return i;
         }
     }
+    char buffer[1024];
+    sprintf(buffer, "Can't find item \" %s \"", key_word);
+    op(buffer);
     return -1;
 }
 
 // 清空当前选中商品，重新结账
 int command_clear() {
+    char buffer[1024];
+    sprintf(buffer, "Clear %d items.", ruv_size);
+    op(buffer);
     delete_all_ru();
     return DB_FINE;
 }
@@ -218,14 +264,27 @@ int command_set_price(const char *key_word, const char *price) {
     }
     double price_double;
     if (sscanf(price, "%lf", &price_double) != 1) { // NOLINT(*-err34-c)
+        char buffer[1024];
+        sprintf(buffer, "\" %s \" is not a number.", price);
+        op(buffer);
         return DB_ERROR;
     }
     const int price_int = (int) (price_double * 100.0 + 0.5);
     if (price_int <= 0) {
+        char buffer[1024];
+        sprintf(buffer, "The number \" %.2f \" is less than zero.", price_int / 100.0);
+        op(buffer);
         return DB_ERROR;
     }
+
+    char buffer[1024];
+    sprintf(buffer, "Successfully set [ %d ] %s \'s price from %.2f￥ to %.2f￥", iv[index] ->id, iv[index] -> name, iv[index] -> price / 100.0, price_int / 100.0);
+    op(buffer);
+
     iv[index] -> price = price_int;
     save_item();
+
+
     return DB_FINE;
 }
 
@@ -250,6 +309,9 @@ int command_sales(const char *year, const char *month, const char *day) {
         }
     }
     if (m < 1 || m > 12) {
+        char buffer[1024];
+        sprintf(buffer, "Month %d is not on Earth.", m);
+        op(buffer);
         return DB_ERROR;
     }
 
@@ -261,12 +323,21 @@ int command_sales(const char *year, const char *month, const char *day) {
         }
     }
     if (d < 1 || d > 31) {
+        char buffer[1024];
+        sprintf(buffer, "Day %d is not on Earth.", d);
+        op(buffer);
         return DB_ERROR;
     }
     if ((m == 4 || m == 6 || m == 9 || m == 11) && d > 30) {
+        char buffer[1024];
+        sprintf(buffer, "Day %d in month %d is not on Earth.", d, m);
+        op(buffer);
         return DB_ERROR;
     }
     if (m == 2 && d > feb) {
+        char buffer[1024];
+        sprintf(buffer, "Day %d in month %d year %d is not on Earth.", d, m, y);
+        op(buffer);
         return DB_ERROR;
     }
 
@@ -286,6 +357,9 @@ int command_sales(const char *year, const char *month, const char *day) {
     sales_sum = sum;
     init_records(lt);
 
+    char buffer[1024];
+    sprintf(buffer, "The sales on %d / %d / %d is %.2f￥.", y, m, d, sum / 100.0);
+    op(buffer);
     return DB_FINE;
 }
 
@@ -309,13 +383,20 @@ int command_set_stock(const char *key_word, const char *number) {
 
     int n;
     if (sscanf(number, "%d", &n) != 1) { // NOLINT(*-err34-c)
+        char buffer[1024];
+        sprintf(buffer, "\" %s \" is not a number.", number);
+        op(buffer);
         return DB_ERROR;
     }
 
     if (n < 0) {
+        char buffer[1024];
+        sprintf(buffer, "The number \" %d \" is less than zero.", n);
+        op(buffer);
         return DB_ERROR;
     }
 
+    int stock_0 = item -> stock;
     if (mode == 0) {
         item -> stock = n;
     } else if (mode > 0) {
@@ -327,6 +408,11 @@ int command_set_stock(const char *key_word, const char *number) {
         }
     }
     save_item();
+
+    char buffer[1024];
+    sprintf(buffer, "Successfully set [ %d ] %s \'s stock from %d to %d", iv[index] ->id, iv[index] -> name, stock_0, iv[index] -> stock);
+    op(buffer);
+
     return DB_FINE;
 }
 
@@ -334,18 +420,30 @@ int command_set_stock(const char *key_word, const char *number) {
 int command_add_item(const char *id, const char *name, const char *price) {
     int id_int;
     if (sscanf(id, "%d", &id_int) != 1) { // NOLINT(*-err34-c)
+        char buffer[1024];
+        sprintf(buffer, "\" %s \" is not a number.", id);
+        op(buffer);
         return DB_ERROR;
     }
     if (id_int <= 0) {
+        char buffer[1024];
+        sprintf(buffer, "The number \" %d \" is less than zero.", id_int);
+        op(buffer);
         return DB_ERROR;
     }
 
     double price_float;
     if (sscanf(price, "%lf", &price_float) != 1) { // NOLINT(*-err34-c)
+        char buffer[1024];
+        sprintf(buffer, "\" %s \" is not a number.", price);
+        op(buffer);
         return DB_ERROR;
     }
     const int price_int = (int) (price_float * 100.0 + 0.5);
     if (price_int <= 0) {
+        char buffer[1024];
+        sprintf(buffer, "The number \" %.2f \" is less than zero.", price_int / 100.0);
+        op(buffer);
         return DB_ERROR;
     }
 
@@ -849,11 +947,11 @@ void add_ru(const Item *item, const int number, const int mode) {
 
         if (unit -> number > item -> stock) {
             unit -> number = item -> stock;
+            op("Excessive extraction, automatically takes the maximum value.");
         }
         if (unit -> number <= 0) {
             delete_ru(ruv_index);
         }
-
     }
 }
 

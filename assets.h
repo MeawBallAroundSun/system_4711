@@ -7,9 +7,10 @@
 
 #include "language.h"
 
-#define LANGUAGE_NUMBER 2
+#define LANGUAGE_NUMBER         2
 
-#define AD_HOME_OPTION_NUM 8
+#define AD_HOME_OPTION_NUM      8
+#define CA_HOME_OPTION_NUM      5
 
 extern MultilanguageText WELCOME;
 extern MultilanguageText NU_CL;
@@ -38,6 +39,7 @@ extern MultilanguageText STOCK_ERROR[2];
 extern MultilanguageText LOGIN_BOX[1];
 
 extern MultilanguageText AD_HOME_BOX[AD_HOME_OPTION_NUM];
+extern MultilanguageText CA_HOME_BOX[CA_HOME_OPTION_NUM];
 
 extern MultilanguageText CASHIER_BOX[4];
 

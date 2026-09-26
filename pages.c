@@ -42,6 +42,7 @@ Component create_administrator_account_box;
 Component login_box;
 
 Component ad_home_box;
+Component ca_home_box;
 
 Component cashier_box;
 
@@ -83,7 +84,8 @@ void init_components() {
 
     login_box = create_choose_box(LOGIN_BOX, 1, 0, 0, 1, 1, 64, 1, SELECTED_COLOR);
 
-    ad_home_box = create_choose_box(AD_HOME_BOX, AD_HOME_OPTION_NUM, 0, 0, 4, 4, 24, 3, SELECTED_COLOR);
+    ad_home_box = create_choose_box(AD_HOME_BOX, AD_HOME_OPTION_NUM, 0, 0, 5, 4, 24, 3, SELECTED_COLOR);
+    ca_home_box = create_choose_box(CA_HOME_BOX, CA_HOME_OPTION_NUM, 0, 0, 5, 4, 24, 3, SELECTED_COLOR);
 
     cashier_box = create_choose_box(CASHIER_BOX, 4, 0, 0, 2, 2, 16, 1, SELECTED_COLOR);
 
@@ -294,6 +296,8 @@ void enter_home() {
     const Account *account = get_current_account();
     if (account -> is_administrator) {
         enter_ad_home();
+    } else {
+        enter_ca_home();
     }
 }
 
@@ -347,6 +351,48 @@ void leave_ad_home(const int state) {
     }
 }
 
+
+
+
+
+
+
+
+// 进入收银员界面
+void enter_ca_home() {
+    remove_all_components();
+
+    add_title_bar();
+
+    set_location(&ca_home_box, 0, 4);
+    set_box_choose(&ca_home_box, 0);
+    set_call_back(&ca_home_box, leave_ca_home);
+    add_component(&ca_home_box);
+
+    set_focused_component(&ca_home_box);
+}
+// 离开收银员界面
+void leave_ca_home(const int state) {
+    switch (state) {
+        case 0: {
+            enter_cashier();
+            break;
+        }
+        case 2: {
+            enter_cl();
+            break;
+        }
+        case 3: {
+            command_logout();
+            enter_ou_wel();
+            break;
+        }
+        case 4: {
+            is_system_closed = 1;
+            break;
+        }
+    }
+}
 
 
 // 进入收银界面
@@ -469,7 +515,7 @@ void enter_stock() {
     add_component(&input_number_box);
 
     set_location(&stock_box, 0, 16);
-    set_box_input(&stock_box, "");
+    set_box_choose(&stock_box, 0);
     set_call_back(&stock_box, leave_stock);
     add_component(&stock_box);
 
@@ -547,7 +593,7 @@ void enter_price() {
     add_component(&input_price_box);
 
     set_location(&stock_box, 0, 16);
-    set_box_input(&stock_box, "");
+    set_box_choose(&stock_box, 0);
     set_call_back(&stock_box, leave_price);
     add_component(&stock_box);
 
