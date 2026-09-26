@@ -72,6 +72,11 @@ MultilanguageText INPUT_NUMBER = {
     "数量："
 };
 
+MultilanguageText INPUT_PRICE = {
+    "Price:",
+    "数量："
+};
+
 MultilanguageText CREATE_ACCOUNT_ERROR = {
     "The input format is incorrect, or the username has already been taken.",
     "输入格式有误，或此用户名已存在"
@@ -90,6 +95,17 @@ MultilanguageText CASHIER_ERROR = {
 MultilanguageText CHECKOUT_ERROR = {
     "No selected items.",
     "当前无已选商品。"
+};
+
+MultilanguageText STOCK_ERROR[2] = {
+    {
+        "Can't find the item.",
+        "找不到对应商品。"
+    },
+    {
+        "The number is incorrect.",
+        "数字出错。"
+    }
 };
 
 MultilanguageText LOGIN_BOX[1] = {
@@ -156,29 +172,44 @@ MultilanguageText CHECKOUT_PANEL_TITLE[4] = {
     }
 };
 
-MultilanguageText STOCK_PANEL_TITLE[3] = {
+MultilanguageText STOCK_PANEL_TITLE[4] = {
     {
         "ID", "编号"
     },
     {
-    "Name", "名称"
+        "Name", "名称"
     },
     {
-    "Stock", "库存"
+        "Stock", "库存"
+    },
+    {
+        "No selected items.","无选中商品。"
     }
 };
 
-MultilanguageText STOCK_BOX[4] = {
+MultilanguageText PRICE_PANEL_TITLE[4] = {
+    {
+        "ID", "编号"
+    },
+    {
+        "Name", "名称"
+    },
+    {
+        "Price", "价格"
+    },
+    {
+        "No selected items.","无选中商品。"
+    }
+};
+
+MultilanguageText STOCK_BOX[3] = {
     {
         "View", "查看"
     },
     {
-    "Set", "设置"
+        "Set", "设置"
     },
     {
-    "Back", "返回"
-    },
-    {
-    "No selected items.","无选中商品。"
+        "Back", "返回"
     }
 };

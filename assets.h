@@ -25,11 +25,13 @@ extern MultilanguageText INPUT_NAME;
 extern MultilanguageText INPUT_PASSWORD;
 extern MultilanguageText INPUT_ITEM;
 extern MultilanguageText INPUT_NUMBER;
+extern MultilanguageText INPUT_PRICE;
 
 extern MultilanguageText CREATE_ACCOUNT_ERROR;
 extern MultilanguageText LOGIN_ERROR;
 extern MultilanguageText CASHIER_ERROR;
 extern MultilanguageText CHECKOUT_ERROR;
+extern MultilanguageText STOCK_ERROR[2];
 
 
 extern MultilanguageText LOGIN_BOX[1];
@@ -39,8 +41,9 @@ extern MultilanguageText AD_HOME_BOX[AD_HOME_OPTION_NUM];
 extern MultilanguageText CASHIER_BOX[4];
 
 extern MultilanguageText CHECKOUT_PANEL_TITLE[4];
-extern MultilanguageText STOCK_PANEL_TITLE[3];
+extern MultilanguageText STOCK_PANEL_TITLE[4];
+extern MultilanguageText PRICE_PANEL_TITLE[4];
 
-extern MultilanguageText STOCK_BOX[4];
+extern MultilanguageText STOCK_BOX[3];
 
 #endif //SYSTEM_4711_ASSETS_H

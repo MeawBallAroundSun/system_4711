@@ -19,6 +19,8 @@ extern Component clock_panel;
 extern Component fps_panel;
 extern Component notice_panel;
 extern Component checkout_panel;
+extern Component stock_panel;
+extern Component price_panel;
 
 
 extern Component welcome_label;
@@ -35,12 +37,15 @@ extern Component input_item_label;
 extern Component input_item_box;
 extern Component input_number_label;
 extern Component input_number_box;
+extern Component input_price_label;
 
 extern Component create_administrator_account_box;
 
 extern Component login_box;
 
 extern Component ad_home_box;
+
+extern Component cashier_box;
 
 extern Component stock_box;
 
@@ -74,5 +79,8 @@ void leave_cl(int state);
 
 void enter_stock();
 void leave_stock(int state);
+
+void enter_price();
+void leave_price(int state);
 
 #endif //SYSTEM_4711_PAGES_H

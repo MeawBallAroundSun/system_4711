@@ -14,6 +14,8 @@ Component clock_panel;
 Component fps_panel;
 Component notice_panel;
 Component checkout_panel;
+Component stock_panel;
+Component price_panel;
 
 
 Component welcome_label;
@@ -30,6 +32,7 @@ Component input_item_label;
 Component input_item_box;
 Component input_number_label;
 Component input_number_box;
+Component input_price_label;
 
 Component create_administrator_account_box;
 
@@ -49,6 +52,8 @@ void init_components() {
     fps_panel = create_fps_panel(0, 0, FOREGROUND_COLOR);
     notice_panel = create_notice_panel(0, 0, SELECTED_COLOR);
     checkout_panel = create_db_checkout_panel(0, 0, SELECTED_COLOR);
+    stock_panel = create_db_stock_panel(0, 0, FOREGROUND_COLOR);
+    price_panel = create_db_price_panel(0, 0, FOREGROUND_COLOR);
 
     welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER * 3, FOREGROUND_COLOR);
     nu_cl_label = create_label(&NU_CL, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
@@ -64,6 +69,7 @@ void init_components() {
     input_item_box = create_input_box(0, 0, MAX_ITEM_LENGTH / 4, 4, MAX_ITEM_LENGTH, FOREGROUND_COLOR);
     input_number_label = create_label(&INPUT_NUMBER, 0, 0, 20, 1, FOREGROUND_COLOR);
     input_number_box = create_input_box(0, 0, MAX_NUMBER_LENGTH, 2, MAX_NUMBER_LENGTH, FOREGROUND_COLOR);
+    input_price_label = create_label(&INPUT_PRICE, 0, 0, 20, 1, FOREGROUND_COLOR);
 
     create_administrator_account_box = create_choose_box(CREATE_ADMINISTRATOR_ACCOUNT_BOX, 1, 0, 0, 1, 1, 128, 1, SELECTED_COLOR);
 
@@ -305,6 +311,11 @@ void leave_ad_home(const int state) {
         }
         case 3: {
             enter_stock();
+            break;
+        }
+        case 4: {
+            enter_price();
+            break;
         }
         case 6: {
             command_logout();
@@ -448,6 +459,10 @@ void enter_stock() {
     clear_notice();
     add_component(&notice_panel);
 
+    set_location(&stock_panel, 48, 4);\
+    stock_panel.parameters[0] = -1;
+    add_component(&stock_panel);
+
     set_focused_component(&input_item_box);
 }
 // 退出库存设置界面
@@ -456,6 +471,103 @@ void leave_stock(const int state) {
         case 0: {
             clear_notice();
             const int index = command_search(input_item_box.input);
+            if (index == -1) {
+                print_notice(STOCK_ERROR[0], 1);
+                set_box_input(&input_item_box, "");
+            }
+            stock_panel.parameters[0] = index;
+            break;
+        }
+        case 1: {
+            clear_notice();
+            const int index = command_search(input_item_box.input);
+            if (index == -1) {
+                print_notice(STOCK_ERROR[0], 1);
+                set_box_input(&input_item_box, "");
+            }
+            stock_panel.parameters[0] = index;
+            if (command_set_stock(input_item_box.input, input_number_box.input) == DB_ERROR) {
+                print_notice(STOCK_ERROR[1], 1);
+            }
+            set_box_input(&input_number_box, "");
+            break;
+        }
+        case 2:
+        default: {
+            enter_home();
+            break;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+// 进入价格设置界面
+void enter_price() {
+    remove_all_components();
+
+    add_title_bar();
+
+    set_location(&input_item_label, 0, 4);
+    add_component(&input_item_label);
+
+    set_location(&input_item_box, 0, 5);
+    set_box_input(&input_item_box, "");
+    add_component(&input_item_box);
+
+    set_location(&input_price_label, 0, 10);
+    add_component(&input_price_label);
+
+    set_location(&input_number_box, 0, 11);
+    set_box_input(&input_number_box, "");
+    add_component(&input_number_box);
+
+    set_location(&stock_box, 0, 16);
+    set_box_input(&stock_box, "");
+    set_call_back(&stock_box, leave_price);
+    add_component(&stock_box);
+
+    set_location(&notice_panel, 0, 22);
+    clear_notice();
+    add_component(&notice_panel);
+
+    set_location(&price_panel, 48, 4);\
+    price_panel.parameters[0] = -1;
+    add_component(&price_panel);
+
+    set_focused_component(&input_item_box);
+}
+// 退出价格设置界面
+void leave_price(const int state) {
+    switch (state) {
+        case 0: {
+            clear_notice();
+            const int index = command_search(input_item_box.input);
+            if (index == -1) {
+                print_notice(STOCK_ERROR[0], 1);
+                set_box_input(&input_item_box, "");
+            }
+            price_panel.parameters[0] = index;
+            break;
+        }
+        case 1: {
+            clear_notice();
+            const int index = command_search(input_item_box.input);
+            if (index == -1) {
+                print_notice(STOCK_ERROR[0], 1);
+                set_box_input(&input_item_box, "");
+            }
+            price_panel.parameters[0] = index;
+            if (command_set_price(input_item_box.input, input_number_box.input) == DB_ERROR) {
+                print_notice(STOCK_ERROR[1], 1);
+            }
+            set_box_input(&input_number_box, "");
             break;
         }
         case 2:

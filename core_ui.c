@@ -678,6 +678,13 @@ Component create_db_stock_panel(const short x, const short y, const int color) {
     return c;
 }
 
+// 创建价格面板
+// 参数列表：当前商品索引
+Component create_db_price_panel(const short x, const short y, const int color) {
+    const Component c = {CORE_UI_DB_PRICE_PANEL, 0, x, y, 72, 128, color, {0, 0, 0, 0, 0, 0, 0, 0}, 0, NULL, NULL, NULL, NULL};
+    return c;
+}
+
 void clear_console() {
     WriteConsole(current_handle, CLEAN_UP_CONSOLE, strlen(CLEAN_UP_CONSOLE), NULL, NULL);
     SetConsoleCursorPosition(current_handle, origin_coord);
@@ -996,7 +1003,35 @@ void draw_component(Component *c) {
                 draw_multilanguage_text(STOCK_PANEL_TITLE[1], x + cw, y, cw, 1, c -> color, NULL);
                 draw_multilanguage_text(STOCK_PANEL_TITLE[2], x + cw * 2, y, cw, 1, c -> color, NULL);
                 const int index = c -> parameters[0];
-                if (index == 0) {}
+                if (index == -1) {
+                    draw_multilanguage_text(STOCK_PANEL_TITLE[3], x, y + 2, w, 1, c -> color, NULL);
+                } else {
+                    const Item *item = get_item(index);
+                    char buffer[16];
+                    sprintf(buffer, "%d", item -> id);
+                    draw_text(buffer, x, y + 2, cw, 2, c -> color, NULL);
+                    draw_text(item -> name, x + cw, y + 2, cw, 2, c -> color, NULL);
+                    sprintf(buffer, "%d", item -> stock);
+                    draw_text(buffer, x + cw * 2, y + 2, cw, 2, c -> color, NULL);
+                }
+            }
+            case CORE_UI_DB_PRICE_PANEL: {
+                const int cw = w / 3;
+                draw_multilanguage_text(PRICE_PANEL_TITLE[0], x, y, cw, 1, c -> color, NULL);
+                draw_multilanguage_text(PRICE_PANEL_TITLE[1], x + cw, y, cw, 1, c -> color, NULL);
+                draw_multilanguage_text(PRICE_PANEL_TITLE[2], x + cw * 2, y, cw, 1, c -> color, NULL);
+                const int index = c -> parameters[0];
+                if (index == -1) {
+                    draw_multilanguage_text(PRICE_PANEL_TITLE[3], x, y + 2, w, 1, c -> color, NULL);
+                } else {
+                    const Item *item = get_item(index);
+                    char buffer[16];
+                    sprintf(buffer, "%d", item -> id);
+                    draw_text(buffer, x, y + 2, cw, 2, c -> color, NULL);
+                    draw_text(item -> name, x + cw, y + 2, cw, 2, c -> color, NULL);
+                    sprintf(buffer, "%.2f", item -> price / 100.0);
+                    draw_text(buffer, x + cw * 2, y + 2, cw, 2, c -> color, NULL);
+                }
             }
             default:
             case CORE_UI_UNKNOWN: {
