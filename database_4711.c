@@ -199,7 +199,7 @@ int command_checkout() {
             record -> units[i].price = ruv[i] -> price;
             record -> units[i].number = ruv[i] -> number;
 
-            sprintf(buffer, "    [ %d ] %s     %.2f￥ * %d = %.2f￥", record -> units[i].id, record -> units[i].name, record -> units->price / 100.0, record -> units[i].number, record -> units->price * record -> units[i].number / 100.0);
+            sprintf(buffer, "    [ %d ] %s     %.2f￥ * %d = %.2f￥", record -> units[i].id, record -> units[i].name, record -> units[i].price / 100.0, record -> units[i].number, record -> units[i].price * record -> units[i].number / 100.0);
             op(buffer);
             sum += record -> units[i].price * record -> units[i].number;
 
