@@ -14,7 +14,7 @@
 int main(void) {
     enter_4711();
 
-     while (1) {
+     while (!is_system_closed) {
          refresh_console();
      }
 }

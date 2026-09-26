@@ -14,9 +14,14 @@ MultilanguageText WELCOME = {
     "使用 [Enter] 来选择。"
 };
 
-MultilanguageText CHOOSE_LANGUAGE = {
+MultilanguageText NU_CL = {
     "Since this is your first time using the system, please choose the language you want to use.",
     "这是您第一次使用此系统，请选择您想要使用的语言。"
+};
+
+MultilanguageText OU_CL = {
+    "Since you haven't set the language yet, please choose the language you want to use.",
+    "您还没有设置语言，请选择您想要使用的语言。"
 };
 
 MultilanguageText LANGUAGES[LANGUAGE_NUMBER] = {
@@ -62,4 +67,43 @@ MultilanguageText INPUT_PASSWORD = {
 MultilanguageText CREATE_ACCOUNT_ERROR = {
     "The input format is incorrect, or the username has already been taken.",
     "输入格式有误，或此用户名已存在"
+};
+
+MultilanguageText LOGIN_ERROR = {
+    "Username or password is incorrect.",
+    "用户名或密码错误。"
+};
+
+MultilanguageText LOGIN_BOX[1] = {
+    {
+        "Login",
+        "登录"
+    }
+};
+
+MultilanguageText AD_HOME_BOX[AD_HOME_OPTION_NUM] = {
+    {
+        "Cashier","收银"
+    },
+    {
+        "View Item", "查看商品"
+    },
+    {
+        "Set Language", "设置语言"
+    },
+    {
+        "Set Stock", "设置库存"
+    },
+    {
+        "Set Price", "设置价格"
+    },
+    {
+        "Command", "指令"
+    },
+    {
+        "Log Out", "退出登录"
+    },
+    {
+        "Quit", "关闭程序"
+    }
 };

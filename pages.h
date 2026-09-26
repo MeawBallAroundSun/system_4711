@@ -10,15 +10,18 @@
 #define MAX_NAME_LENGTH                         64
 #define MAX_PASSWORD_LENGTH                     64
 
+extern char is_system_closed;
+
 extern Component debug_panel;
 extern Component clock_panel;
 extern Component fps_panel;
 
 extern Component welcome_label;
-extern Component choose_language_label_0;
+extern Component nu_cl_label;
+extern Component ou_cl_label;
 extern Component languages_box;
 
-extern Component create_administrator_account_label;
+extern Component nu_ca_label;
 extern Component input_name_label;
 extern Component input_name_box;
 extern Component input_password_label;
@@ -38,6 +41,10 @@ void leave_nu_ca_wel(int state);
 void enter_ou_cl_wel(void);
 void leave_ou_cl_wel(int state);
 
+void enter_ou_wel(void);
+void leave_ou_wel(int state);
+
 void enter_ad_home(void);
+void leave_ad_home(int state);
 
 #endif //SYSTEM_4711_PAGES_H

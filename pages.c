@@ -6,6 +6,9 @@
 #include "assets.h"
 #include "database_4711.h"
 
+char is_system_closed = 0;
+
+
 Component debug_panel;
 Component clock_panel;
 Component fps_panel;
@@ -13,15 +16,20 @@ Component notice_panel;
 
 
 Component welcome_label;
-Component choose_language_label_0;
+Component nu_cl_label;
+Component ou_cl_label;
 Component languages_box;
 
-Component create_administrator_account_label;
+Component nu_ca_label;
 Component input_name_label;
 Component input_name_box;
 Component input_password_label;
 Component input_password_box;
 Component create_administrator_account_box;
+
+Component login_box;
+
+Component ad_home_box;
 
 
 
@@ -33,15 +41,20 @@ void init_components() {
     notice_panel = create_notice_panel(0, 0, SELECTED_COLOR);
 
     welcome_label = create_label(&WELCOME, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER * 3, FOREGROUND_COLOR);
-    choose_language_label_0 = create_label(&CHOOSE_LANGUAGE, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
+    nu_cl_label = create_label(&NU_CL, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
+    ou_cl_label = create_label(&OU_CL, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
     languages_box = create_choose_box(LANGUAGES, LANGUAGE_NUMBER, 0, 0, LANGUAGE_NUMBER / 2, 2, 16, 1, SELECTED_COLOR);
 
-    create_administrator_account_label = create_label(&CREATE_ADMINISTRATOR_ACCOUNT, 0, 0, CORE_UI_CONSOLE_WIDTH, 5, FOREGROUND_COLOR);
+    nu_ca_label = create_label(&CREATE_ADMINISTRATOR_ACCOUNT, 0, 0, CORE_UI_CONSOLE_WIDTH, 5, FOREGROUND_COLOR);
     input_name_label = create_label(&INPUT_NAME, 0, 0, 16, 1, FOREGROUND_COLOR);
     input_name_box = create_input_box(0, 0, MAX_NAME_LENGTH, 2, MAX_NAME_LENGTH, FOREGROUND_COLOR);
     input_password_label = create_label(&INPUT_PASSWORD, 0, 0, 16, 1, FOREGROUND_COLOR);
     input_password_box = create_input_box(0, 0, MAX_PASSWORD_LENGTH, 2, MAX_PASSWORD_LENGTH, FOREGROUND_COLOR);
     create_administrator_account_box = create_choose_box(CREATE_ADMINISTRATOR_ACCOUNT_BOX, 1, 0, 0, 1, 1, 128, 1, SELECTED_COLOR);
+
+    login_box = create_choose_box(LOGIN_BOX, 1, 0, 0, 1, 1, 128, 1, SELECTED_COLOR);
+
+    ad_home_box = create_choose_box(AD_HOME_BOX, AD_HOME_OPTION_NUM, 0, 0, 4, 4, 24, 3, SELECTED_COLOR);
 }
 
 
@@ -77,7 +90,12 @@ void enter_4711() {
             enter_nu_ca_wel();
         }
     } else {
-
+        if (language_profile == 0) {
+            enter_ou_cl_wel();
+        } else {
+            set_language(language_profile);
+            enter_ou_wel();
+        }
     }
 }
 
@@ -93,8 +111,8 @@ void enter_nu_cl_wel() {
     set_location(&welcome_label, 0, 4);
     add_component(&welcome_label);
 
-    set_location(&choose_language_label_0, 0, 13);
-    add_component(&choose_language_label_0);
+    set_location(&nu_cl_label, 0, 13);
+    add_component(&nu_cl_label);
 
     set_location(&languages_box, 0, 17);
     set_box_choose(&languages_box, 0);
@@ -109,14 +127,16 @@ void leave_nu_cl_wel(const int state) {
 }
 
 
+
+
 // 进入新用户创建管理员欢迎界面
 void enter_nu_ca_wel() {
     remove_all_components();
 
     add_title_bar();
 
-    set_location(&create_administrator_account_label, 0, 4);
-    add_component(&create_administrator_account_label);
+    set_location(&nu_ca_label, 0, 4);
+    add_component(&nu_ca_label);
 
     set_location(&input_name_label, 0, 12);
     add_component(&input_name_label);
@@ -142,7 +162,6 @@ void enter_nu_ca_wel() {
     add_component(&notice_panel);
 
     set_focused_component(&input_name_box);
-
 }
 // 离开新用户创建管理员欢迎界面
 void leave_nu_ca_wel(int state) {
@@ -154,11 +173,76 @@ void leave_nu_ca_wel(int state) {
     }
 }
 
+
+
 // 进入老用户选择语言欢迎界面
 void enter_ou_cl_wel(void) {
+    remove_all_components();
+
+    add_title_bar();
+
+    set_location(&welcome_label, 0, 4);
+    add_component(&welcome_label);
+
+    set_location(&ou_cl_label, 0, 13);
+    add_component(&ou_cl_label);
+
+    set_location(&languages_box, 0, 17);
+    set_box_choose(&languages_box, 0);
+    set_call_back(&languages_box, leave_ou_cl_wel);
+    add_component(&languages_box);
+    set_focused_component(&languages_box);
 }
+
 // 离开老用户选择语言欢迎界面
-void leave_ou_cl_wel(int state) {
+void leave_ou_cl_wel(const int state) {
+    set_language(state + 1);
+    enter_ou_wel();
+}
+
+
+
+// 进入老用户欢迎（登录）界面
+void enter_ou_wel(void) {
+    remove_all_components();
+
+    add_title_bar();
+
+    set_location(&welcome_label, 0, 4);
+    add_component(&welcome_label);
+
+    set_location(&input_name_label, 0, 10);
+    add_component(&input_name_label);
+
+    set_location(&input_name_box, 16, 10);
+    set_box_input(&input_name_box, "");
+    add_component(&input_name_box);
+
+    set_location(&input_password_label, 0, 14);
+    add_component(&input_password_label);
+
+    set_location(&input_password_box, 16, 14);
+    set_box_input(&input_password_box, "");
+    add_component(&input_password_box);
+
+    set_location(&login_box, 0, 17);
+    set_box_choose(&login_box, 0);
+    set_call_back(&login_box, leave_ou_wel);
+    add_component(&login_box);
+
+    set_location(&notice_panel, 0, 22);
+    clear_notice();
+    add_component(&notice_panel);
+
+    set_focused_component(&input_name_box);
+}
+// 离开老用户欢迎（登录）界面
+void leave_ou_wel(int state) {
+    if (command_login(input_name_box.input, input_password_box.input) == DB_ERROR) {
+        print_notice(LOGIN_ERROR, 1);
+    } else {
+        enter_ad_home();
+    }
 }
 
 // 进入管理员主界面
@@ -166,4 +250,21 @@ void enter_ad_home(void) {
     remove_all_components();
 
     add_title_bar();
+
+    set_location(&ad_home_box, 0, 4);
+    set_box_choose(&ad_home_box, 0);
+    set_call_back(&ad_home_box, leave_ad_home);
+    add_component(&ad_home_box);
+
+    set_focused_component(&ad_home_box);
 }
+// 退出管理员主界面
+void leave_ad_home(const int state) {
+    switch (state) {
+        case 0:
+
+    }
+}
+
+
+

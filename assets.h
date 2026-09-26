@@ -9,8 +9,11 @@
 
 #define LANGUAGE_NUMBER 2
 
+#define AD_HOME_OPTION_NUM 8
+
 extern MultilanguageText WELCOME;
-extern MultilanguageText CHOOSE_LANGUAGE;
+extern MultilanguageText NU_CL;
+extern MultilanguageText OU_CL;
 
 extern MultilanguageText LANGUAGES[LANGUAGE_NUMBER];
 
@@ -22,5 +25,11 @@ extern MultilanguageText INPUT_NAME;
 extern MultilanguageText INPUT_PASSWORD;
 
 extern MultilanguageText CREATE_ACCOUNT_ERROR;
+extern MultilanguageText LOGIN_ERROR;
+
+
+extern MultilanguageText LOGIN_BOX[1];
+
+extern MultilanguageText AD_HOME_BOX[AD_HOME_OPTION_NUM];
 
 #endif //SYSTEM_4711_ASSETS_H
