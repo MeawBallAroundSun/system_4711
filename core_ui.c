@@ -423,7 +423,11 @@ void add_component(Component *c) {
 }
 
 void set_focused_component(Component *c) {
-    if (c != NULL && c -> mode & CORE_UI_FOCUSABLE) {
+    if (c == NULL) {
+        focused_component = NULL;
+        return;
+    }
+    if (c -> mode & CORE_UI_FOCUSABLE) {
         focused_component = c;
     }
 }
@@ -562,6 +566,7 @@ void remove_component_with_index(const int index) {
 
 void remove_all_components() {
     vector_size = 0;
+    set_focused_component(NULL);
 }
 
 void set_location(Component *c, const int x, const int y) {
@@ -682,6 +687,7 @@ void refresh_console() {
     for (int i = 0; i < vector_size; i++) {
         draw_component(components[i]);
     }
+    set_to_default_color();
 
     // 挪回光标（下面可能再挪走光标）
     SetConsoleCursorPosition(current_handle, cursor_coord);

@@ -35,6 +35,9 @@ void leave_nu_cl_wel(int state);
 void enter_nu_ca_wel(void);
 void leave_nu_ca_wel(int state);
 
+void enter_ou_cl_wel(void);
+void leave_ou_cl_wel(int state);
+
 void enter_ad_home(void);
 
 #endif //SYSTEM_4711_PAGES_H

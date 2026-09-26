@@ -31,8 +31,10 @@ MultilanguageText LANGUAGES[LANGUAGE_NUMBER] = {
 };
 
 MultilanguageText CREATE_ADMINISTRATOR_ACCOUNT = {
-    "Create an administrator account:",
-    "创建管理员账户："
+    "Since this is your first time using the system, please create an administrator account:\n\n\n\n"
+    "( Both the name and the password must be at least six characters long )",
+    "这是您第一次使用此系统，请创建管理员账户：\n\n\n\n"
+    "（名称和密码均需要至少六位）"
 };
 
 MultilanguageText CREATE_CRASHER_ACCOUNT = {

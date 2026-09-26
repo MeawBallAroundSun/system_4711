@@ -36,7 +36,7 @@ void init_components() {
     choose_language_label_0 = create_label(&CHOOSE_LANGUAGE, 0, 0, CORE_UI_CONSOLE_WIDTH, LANGUAGE_NUMBER, FOREGROUND_COLOR);
     languages_box = create_choose_box(LANGUAGES, LANGUAGE_NUMBER, 0, 0, LANGUAGE_NUMBER / 2, 2, 16, 1, SELECTED_COLOR);
 
-    create_administrator_account_label = create_label(&CREATE_ADMINISTRATOR_ACCOUNT, 0, 0, CORE_UI_CONSOLE_WIDTH, 2, FOREGROUND_COLOR);
+    create_administrator_account_label = create_label(&CREATE_ADMINISTRATOR_ACCOUNT, 0, 0, CORE_UI_CONSOLE_WIDTH, 5, FOREGROUND_COLOR);
     input_name_label = create_label(&INPUT_NAME, 0, 0, 16, 1, FOREGROUND_COLOR);
     input_name_box = create_input_box(0, 0, MAX_NAME_LENGTH, 2, MAX_NAME_LENGTH, FOREGROUND_COLOR);
     input_password_label = create_label(&INPUT_PASSWORD, 0, 0, 16, 1, FOREGROUND_COLOR);
@@ -63,21 +63,23 @@ void enter_4711() {
     // 初始化所有要用到的组件
     init_components();
 
-    // 初始化文件
-    const int folder_state = init_folders();
+    // 初始化数据库
+    init_database();
 
     // 获取语言文件
     const int language_profile = load_language_profile();
 
-    if (folder_state & DB_ERR_ACCOUNT && language_profile == 0) {
+    if (get_account_number() == 0) {
         if (language_profile == 0) {
             enter_nu_cl_wel();
         } else {
-
+            set_language(language_profile);
+            enter_nu_ca_wel();
         }
+    } else {
+
     }
 }
-
 
 
 
@@ -85,7 +87,7 @@ void enter_4711() {
 // 进入新用户选择语言欢迎界面
 void enter_nu_cl_wel() {
     remove_all_components();
-    set_focused_component(NULL);
+
     add_title_bar();
 
     set_location(&welcome_label, 0, 4);
@@ -100,7 +102,6 @@ void enter_nu_cl_wel() {
     add_component(&languages_box);
     set_focused_component(&languages_box);
 }
-
 // 离开新用户选择语言欢迎界面
 void leave_nu_cl_wel(const int state) {
     set_language(state + 1);
@@ -108,43 +109,42 @@ void leave_nu_cl_wel(const int state) {
 }
 
 
-// 进入新用户创建管理员界面
+// 进入新用户创建管理员欢迎界面
 void enter_nu_ca_wel() {
     remove_all_components();
-    set_focused_component(NULL);
 
     add_title_bar();
 
     set_location(&create_administrator_account_label, 0, 4);
     add_component(&create_administrator_account_label);
 
-    set_location(&input_name_label, 0, 8);
+    set_location(&input_name_label, 0, 12);
     add_component(&input_name_label);
 
-    set_location(&input_name_box, 16, 8);
+    set_location(&input_name_box, 16, 12);
     set_box_input(&input_name_box, "");
     add_component(&input_name_box);
 
-    set_location(&input_password_label, 0, 12);
+    set_location(&input_password_label, 0, 16);
     add_component(&input_password_label);
 
-    set_location(&input_password_box, 16, 12);
+    set_location(&input_password_box, 16, 16);
     set_box_input(&input_password_box, "");
     add_component(&input_password_box);
 
-    set_location(&create_administrator_account_box, 0, 15);
+    set_location(&create_administrator_account_box, 0, 19);
     set_box_choose(&create_administrator_account_box, 0);
     set_call_back(&create_administrator_account_box, leave_nu_ca_wel);
     add_component(&create_administrator_account_box);
 
-    set_location(&notice_panel, 0, 20);
+    set_location(&notice_panel, 0, 24);
     clear_notice();
     add_component(&notice_panel);
 
     set_focused_component(&input_name_box);
 
 }
-
+// 离开新用户创建管理员欢迎界面
 void leave_nu_ca_wel(int state) {
     if (command_create_account(input_name_box.input, input_password_box.input, "admin") == DB_ERROR) {
         print_notice(CREATE_ACCOUNT_ERROR, 1);
@@ -154,7 +154,16 @@ void leave_nu_ca_wel(int state) {
     }
 }
 
+// 进入老用户选择语言欢迎界面
+void enter_ou_cl_wel(void) {
+}
+// 离开老用户选择语言欢迎界面
+void leave_ou_cl_wel(int state) {
+}
+
+// 进入管理员主界面
 void enter_ad_home(void) {
     remove_all_components();
-    set_focused_component(NULL);
+
+    add_title_bar();
 }

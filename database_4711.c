@@ -395,7 +395,7 @@ int command_create_account(const char *name, const char *password, const char *a
     if (name == NULL || password == NULL) {
         return DB_ERROR;
     }
-    if (strlen(name) < 4 || strlen(password) < 4) {
+    if (strlen(name) < 6 || strlen(password) < 6) {
         return DB_ERROR;
     }
     for (int i = 0; i < av_size; i++) {
